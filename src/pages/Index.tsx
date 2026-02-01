@@ -35,7 +35,6 @@ import { getSetting, setSetting } from '@/utils/settingsStorage';
 import { logActivity } from '@/utils/activityLogger';
 import { useNotes, NoteMeta } from '@/contexts/NotesContext';
 import { NoteTypeVisibilitySheet } from '@/components/NoteTypeVisibilitySheet';
-import { NoteTemplateSheet, NoteTemplate } from '@/components/NoteTemplateSheet';
 
 const Index = () => {
   const { t } = useTranslation();
@@ -72,7 +71,6 @@ const Index = () => {
   
   // Note type selector dropdown state (for persistent notification integration)
   const [noteTypeSelectorOpen, setNoteTypeSelectorOpen] = useState(false);
-  const [showNoteTemplateSheet, setShowNoteTemplateSheet] = useState(false);
 
   // Load all preferences from IndexedDB
   useEffect(() => {
@@ -375,29 +373,10 @@ const Index = () => {
     });
   };
 
-  const handleCreateNote = (type: NoteType, template?: NoteTemplate) => {
+  const handleCreateNote = (type: NoteType) => {
     setDefaultType(type);
-    if (template) {
-      // Create note from template
-      const newNote: Note = {
-        id: Date.now().toString(),
-        type: template.noteType,
-        title: template.title.replace('[Date]', new Date().toLocaleDateString()).replace('[Name]', '').replace('[Subject]', '').replace('[Title]', '').replace('[Destination]', '').replace('[Screen Name]', '').replace('[Topic]', '').replace('[Endpoint Name]', ''),
-        content: template.content,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        folderId: selectedFolderId || undefined,
-        voiceRecordings: [],
-      };
-      setSelectedNote(newNote);
-    } else {
-      setSelectedNote(null);
-    }
+    setSelectedNote(null);
     setIsEditorOpen(true);
-  };
-
-  const handleSelectTemplate = (template: NoteTemplate) => {
-    handleCreateNote(template.noteType, template);
   };
 
   // Listen for persistent notification to open specific note type directly
@@ -1327,11 +1306,6 @@ const Index = () => {
                   {t('notes.noteTypes.code')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { triggerHaptic('medium'); setShowNoteTemplateSheet(true); setNoteTypeSelectorOpen(false); }} className="gap-2">
-                <Receipt className="h-4 w-4 text-primary" />
-                {t('notes.templates', 'Templates')}
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )
@@ -1343,13 +1317,6 @@ const Index = () => {
       <NoteTypeVisibilitySheet
         isOpen={showNoteTypeVisibilitySheet}
         onClose={() => setShowNoteTypeVisibilitySheet(false)}
-      />
-
-      {/* Note Template Sheet */}
-      <NoteTemplateSheet
-        isOpen={showNoteTemplateSheet}
-        onClose={() => setShowNoteTemplateSheet(false)}
-        onSelectTemplate={handleSelectTemplate}
       />
       
     </div>
