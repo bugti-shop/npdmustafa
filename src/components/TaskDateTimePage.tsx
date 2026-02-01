@@ -188,7 +188,7 @@ export const TaskDateTimePage = ({
   return (
     <div 
       className={cn(
-        "fixed inset-0 bg-background z-50 flex flex-col transition-transform duration-300",
+        "fixed inset-0 bg-background z-[100] flex flex-col transition-transform duration-300",
         isOpen ? "translate-x-0" : "translate-x-full"
       )}
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
