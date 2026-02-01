@@ -8,6 +8,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { notificationManager } from '@/utils/notifications';
 import { toast } from 'sonner';
 import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { getSetting, setSetting } from '@/utils/settingsStorage';
 import { TasksSettings } from './TasksSettingsSheet';
 
@@ -75,6 +76,9 @@ interface TaskInputSheetProps {
 
 export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFolderId, onCreateFolder, sections = [], selectedSectionId, defaultDate }: TaskInputSheetProps) => {
   const { t } = useTranslation();
+  
+  // Keyboard height detection to keep sheet above keyboard
+  const keyboardHeight = useKeyboardHeight();
   
   // Hardware back button support - use 'sheet' priority to close sheet before navigation
   useHardwareBackButton({
@@ -809,8 +813,11 @@ export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFo
       />
 
       <div
-        className="fixed bottom-0 left-0 right-0 bg-card z-[70] rounded-t-[28px] shadow-2xl pointer-events-auto"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }}
+        className="fixed left-0 right-0 bg-card z-[70] rounded-t-[28px] shadow-2xl pointer-events-auto transition-[bottom] duration-100"
+        style={{ 
+          bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px',
+          paddingBottom: keyboardHeight > 0 ? '16px' : 'max(env(safe-area-inset-bottom), 24px)'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 pt-6 pb-6">
