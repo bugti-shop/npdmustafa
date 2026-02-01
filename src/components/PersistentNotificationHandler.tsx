@@ -20,48 +20,45 @@ export const PersistentNotificationHandler = () => {
   const [showTaskInput, setShowTaskInput] = useState(false);
   const [folders, setFolders] = useState<Folder[]>([]);
 
-  // Process an action (shared logic)
+  // Process an action (shared logic) - INSTANT execution
   const processAction = useCallback((actionId: string) => {
-    console.log('[QuickAdd] Processing action:', actionId);
+    console.log('[QuickAdd] Processing action instantly:', actionId);
     
     // Handle individual note type actions (add_note_regular, add_note_sticky, etc.)
     if (actionId.startsWith('add_note_')) {
       const noteType = actionId.replace('add_note_', '') as NoteType;
       console.log('[QuickAdd] Opening note type:', noteType);
       
-      // Navigate to home and dispatch event to open specific note type
+      // Navigate and dispatch immediately (synchronous)
       navigate('/');
-      // Small delay to ensure page is loaded before dispatching
-      setTimeout(() => {
+      // Use queueMicrotask for near-instant execution (faster than setTimeout)
+      queueMicrotask(() => {
         window.dispatchEvent(new CustomEvent('openSpecificNoteType', {
           detail: { noteType }
         }));
-      }, 50); // Reduced delay for faster response
+      });
     } else if (actionId === 'add_task') {
-      // Navigate to home first, then open task sheet
       navigate('/');
-      setTimeout(() => {
+      queueMicrotask(() => {
         setShowTaskInput(true);
-      }, 50);
+      });
     }
   }, [navigate]);
 
-  // Check for pending notification action on mount (fast launch from notification)
+  // Check for pending notification action on mount (INSTANT launch from notification)
   useEffect(() => {
     if (hasProcessedPendingAction.current) return;
     
     const pendingAction = sessionStorage.getItem('pendingNotificationAction');
     if (pendingAction) {
       hasProcessedPendingAction.current = true;
-      console.log('[QuickAdd] Found pending action from notification launch:', pendingAction);
+      console.log('[QuickAdd] Instant launch from notification:', pendingAction);
       
-      // Clear it immediately to prevent re-processing
+      // Clear immediately
       sessionStorage.removeItem('pendingNotificationAction');
       
-      // Process the action with a tiny delay to let the router settle
-      setTimeout(() => {
-        processAction(pendingAction);
-      }, 10);
+      // Process INSTANTLY - no delay at all
+      processAction(pendingAction);
     }
   }, [processAction]);
 
