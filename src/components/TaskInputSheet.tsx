@@ -813,10 +813,10 @@ export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFo
       />
 
       <div
-        className="fixed left-0 right-0 bg-card z-[70] rounded-t-[28px] shadow-2xl pointer-events-auto transition-[bottom] duration-100"
+        className="fixed left-0 right-0 bg-card z-[70] rounded-t-[28px] shadow-2xl pointer-events-auto"
         style={{ 
           bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px',
-          paddingBottom: keyboardHeight > 0 ? '16px' : 'max(env(safe-area-inset-bottom), 24px)'
+          paddingBottom: keyboardHeight > 0 ? '0px' : 'max(env(safe-area-inset-bottom), 24px)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
