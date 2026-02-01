@@ -10,18 +10,38 @@ interface WelcomeContextType {
 
 const WelcomeContext = createContext<WelcomeContextType | undefined>(undefined);
 
+// Check if app was launched from a notification action (skip welcome/loading)
+const isNotificationLaunch = (): boolean => {
+  // Check sessionStorage for pending notification action
+  const pendingAction = sessionStorage.getItem('pendingNotificationAction');
+  if (pendingAction) return true;
+  
+  // Check URL for notification launch parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.has('fromNotification');
+};
+
 export function WelcomeProvider({ children }: { children: ReactNode }) {
-  const [hasSeenWelcome, setHasSeenWelcome] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // If launched from notification, assume welcome is seen (fast path)
+  const notificationLaunch = isNotificationLaunch();
+  const [hasSeenWelcome, setHasSeenWelcome] = useState<boolean>(notificationLaunch);
+  const [isLoading, setIsLoading] = useState(!notificationLaunch);
 
   useEffect(() => {
+    // If notification launch, skip the async check entirely
+    if (notificationLaunch) {
+      // Still save that welcome was seen (in case it wasn't)
+      setSetting('hasSeenWelcome', true);
+      return;
+    }
+    
     const loadWelcomeState = async () => {
       const seen = await getSetting<boolean>('hasSeenWelcome', false);
       setHasSeenWelcome(seen);
       setIsLoading(false);
     };
     loadWelcomeState();
-  }, []);
+  }, [notificationLaunch]);
 
   const completeWelcome = () => {
     setHasSeenWelcome(true);

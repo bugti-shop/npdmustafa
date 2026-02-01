@@ -59,6 +59,9 @@ class PersistentNotificationService implements PersistentNotificationManager {
           const actionId = action.actionId;
           console.log('[PersistentNotification] Action performed:', actionId);
           
+          // Store action in sessionStorage for fast launch (skip splash screen)
+          sessionStorage.setItem('pendingNotificationAction', actionId);
+          
           // Dispatch custom event for the app to handle
           window.dispatchEvent(new CustomEvent('persistentNotificationAction', {
             detail: { actionId }

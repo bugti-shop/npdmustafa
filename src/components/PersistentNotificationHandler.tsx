@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotes } from '@/contexts/NotesContext';
@@ -14,10 +14,56 @@ export const PersistentNotificationHandler = () => {
   const navigate = useNavigate();
   const { saveNote } = useNotes();
   const { toast } = useToast();
+  const hasProcessedPendingAction = useRef(false);
   
   // Task input sheet state
   const [showTaskInput, setShowTaskInput] = useState(false);
   const [folders, setFolders] = useState<Folder[]>([]);
+
+  // Process an action (shared logic)
+  const processAction = useCallback((actionId: string) => {
+    console.log('[QuickAdd] Processing action:', actionId);
+    
+    // Handle individual note type actions (add_note_regular, add_note_sticky, etc.)
+    if (actionId.startsWith('add_note_')) {
+      const noteType = actionId.replace('add_note_', '') as NoteType;
+      console.log('[QuickAdd] Opening note type:', noteType);
+      
+      // Navigate to home and dispatch event to open specific note type
+      navigate('/');
+      // Small delay to ensure page is loaded before dispatching
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openSpecificNoteType', {
+          detail: { noteType }
+        }));
+      }, 50); // Reduced delay for faster response
+    } else if (actionId === 'add_task') {
+      // Navigate to home first, then open task sheet
+      navigate('/');
+      setTimeout(() => {
+        setShowTaskInput(true);
+      }, 50);
+    }
+  }, [navigate]);
+
+  // Check for pending notification action on mount (fast launch from notification)
+  useEffect(() => {
+    if (hasProcessedPendingAction.current) return;
+    
+    const pendingAction = sessionStorage.getItem('pendingNotificationAction');
+    if (pendingAction) {
+      hasProcessedPendingAction.current = true;
+      console.log('[QuickAdd] Found pending action from notification launch:', pendingAction);
+      
+      // Clear it immediately to prevent re-processing
+      sessionStorage.removeItem('pendingNotificationAction');
+      
+      // Process the action with a tiny delay to let the router settle
+      setTimeout(() => {
+        processAction(pendingAction);
+      }, 10);
+    }
+  }, [processAction]);
 
   // Load folders when task sheet opens
   useEffect(() => {
@@ -30,36 +76,23 @@ export const PersistentNotificationHandler = () => {
     }
   }, [showTaskInput]);
 
-  // Listen for persistent notification actions
+  // Listen for persistent notification actions (when app is already open)
   useEffect(() => {
     const handleAction = (event: CustomEvent<{ actionId: string }>) => {
       const { actionId } = event.detail;
-      console.log('[QuickAdd] Action received:', actionId);
+      console.log('[QuickAdd] Action received via event:', actionId);
       
-      // Handle individual note type actions (add_note_regular, add_note_sticky, etc.)
-      if (actionId.startsWith('add_note_')) {
-        const noteType = actionId.replace('add_note_', '') as NoteType;
-        console.log('[QuickAdd] Opening note type:', noteType);
-        
-        // Navigate to home and dispatch event to open specific note type
-        navigate('/');
-        // Small delay to ensure page is loaded before dispatching
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openSpecificNoteType', {
-            detail: { noteType }
-          }));
-        }, 100);
-      } else if (actionId === 'add_task') {
-        // Open the task input sheet (reusing existing component)
-        setShowTaskInput(true);
-      }
+      // Clear sessionStorage since we're handling it now
+      sessionStorage.removeItem('pendingNotificationAction');
+      
+      processAction(actionId);
     };
 
     window.addEventListener('persistentNotificationAction', handleAction as EventListener);
     return () => {
       window.removeEventListener('persistentNotificationAction', handleAction as EventListener);
     };
-  }, [navigate]);
+  }, [processAction]);
 
   // Handle adding a task from the task input sheet
   const handleAddTask = useCallback(async (task: Omit<TodoItem, 'id' | 'completed'>) => {
