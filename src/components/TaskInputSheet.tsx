@@ -840,6 +840,8 @@ export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFo
 
             {taskText.trim() || voiceRecording ? (
               <button
+                onMouseDown={(e) => e.preventDefault()} // Prevent input blur on touch/click
+                onTouchStart={(e) => e.preventDefault()} // Prevent input blur on mobile
                 onClick={(e) => handleSend(e)}
                 className="w-10 h-10 rounded-lg bg-primary hover:opacity-90 flex items-center justify-center transition-all flex-shrink-0"
               >
