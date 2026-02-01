@@ -19,6 +19,7 @@ import { NoteTypeVisibilitySheet } from '@/components/NoteTypeVisibilitySheet';
 import { NotesSettingsSheet } from '@/components/NotesSettingsSheet';
 import { TasksSettingsSheet } from '@/components/TasksSettingsSheet';
 import { CustomizeNavigationSheet } from '@/components/CustomizeNavigationSheet';
+import { WidgetSettingsSheet } from '@/components/WidgetSettingsSheet';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,7 @@ const Settings = () => {
   const [showNotesSettingsSheet, setShowNotesSettingsSheet] = useState(false);
   const [showTasksSettingsSheet, setShowTasksSettingsSheet] = useState(false);
   const [showCustomizeNavigationSheet, setShowCustomizeNavigationSheet] = useState(false);
+  const [showWidgetSettingsSheet, setShowWidgetSettingsSheet] = useState(false);
   const [showNotificationsExpanded, setShowNotificationsExpanded] = useState(false);
   const [hapticIntensity, setHapticIntensity] = useState<'off' | 'light' | 'medium' | 'heavy'>('medium');
   const [isRestoring, setIsRestoring] = useState(false);
@@ -380,6 +382,9 @@ const Settings = () => {
             <SettingsRow label={t('settings.notesSettings', 'Notes Settings')} onClick={() => setShowNotesSettingsSheet(true)} />
             <SettingsRow label={t('settings.tasksSettings', 'Tasks Settings')} onClick={() => setShowTasksSettingsSheet(true)} />
             <SettingsRow label={t('settings.customizeNavigation', 'Customize Navigation')} onClick={() => setShowCustomizeNavigationSheet(true)} />
+            {Capacitor.isNativePlatform() && (
+              <SettingsRow label={t('settings.widgets', 'Home Screen Widgets')} onClick={() => setShowWidgetSettingsSheet(true)} />
+            )}
           </div>
 
           {/* Notifications Section */}
@@ -806,6 +811,11 @@ const Settings = () => {
       <CustomizeNavigationSheet
         isOpen={showCustomizeNavigationSheet}
         onClose={() => setShowCustomizeNavigationSheet(false)}
+      />
+
+      <WidgetSettingsSheet
+        isOpen={showWidgetSettingsSheet}
+        onClose={() => setShowWidgetSettingsSheet(false)}
       />
     </div>
   );
