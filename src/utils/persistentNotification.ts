@@ -13,14 +13,14 @@ const STORAGE_KEYS = {
   ENABLED: 'persistent_notification_enabled',
 };
 
-// Note type emoji/icon mappings
+// Note type emoji/icon mappings (icons only, no text)
 const NOTE_TYPE_LABELS: Record<NoteType, string> = {
-  regular: '📝 Regular',
-  lined: '📄 Lined',
-  sticky: '📌 Sticky',
-  code: '💻 Code',
-  sketch: '🎨 Sketch',
-  voice: '🎤 Voice',
+  regular: '⬜',
+  lined: '📄',
+  sticky: '📕',
+  code: '<>',
+  sketch: '🎨',
+  voice: '🎤',
 };
 
 export interface PersistentNotificationManager {
@@ -145,10 +145,10 @@ class PersistentNotificationService implements PersistentNotificationManager {
         title: NOTE_TYPE_LABELS[type],
       }));
 
-      // Add the task action at the end
+      // Add the task action at the end (icon only)
       const actions = [
         ...noteActions,
-        { id: 'add_task', title: '✅ Add Task' },
+        { id: 'add_task', title: '✅' },
       ];
 
       // Register action types with dynamic actions
