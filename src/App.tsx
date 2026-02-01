@@ -19,6 +19,7 @@ import { NotificationActionsHandler } from "@/components/NotificationActionsHand
 import { NavigationBackProvider } from "@/components/NavigationBackProvider";
 import { notificationManager } from "@/utils/notifications";
 import { persistentNotificationManager } from "@/utils/persistentNotification";
+import { widgetDataSync } from "@/utils/widgetDataSync";
 import { getSetting, setSetting } from "@/utils/settingsStorage";
 import Index from "./pages/Index";
 
@@ -149,6 +150,7 @@ const AppContent = () => {
   useEffect(() => {
     notificationManager.initialize().catch(console.error);
     persistentNotificationManager.initialize().catch(console.error);
+    widgetDataSync.initialize().catch(console.error);
   }, []);
 
   if (!hasSeenWelcome) {
