@@ -23,7 +23,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, LinkIcon, Copy, Replace, Palette } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, LinkIcon, Copy, Replace, Palette, Hash } from 'lucide-react';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1354,6 +1354,51 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                         toast.success(t('editor.urlsCopied', { count: uniqueUrls.length }) || `${uniqueUrls.length} URLs copied to clipboard`);
                       } else {
                         toast.error(t('editor.noUrlsFound') || 'No URLs found in content');
+                      }
+                    }}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('editor.copyToClipboard', 'Copy to Clipboard')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Hashtag Extractor with submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                      <Hash className="h-4 w-4 mr-2" />
+                      {t('editor.extractHashtags', 'Extract Hashtags')}
+                      <ChevronDown className="h-3 w-3 ml-auto" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="bg-popover z-[9999]">
+                    <DropdownMenuItem onClick={() => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      // Match hashtags: # followed by letters, numbers, underscores (Unicode-aware)
+                      const hashtagRegex = /#[\p{L}\p{N}_]+/gu;
+                      const hashtags = plainText.match(hashtagRegex);
+                      if (hashtags && hashtags.length > 0) {
+                        const uniqueHashtags = [...new Set(hashtags.map(h => h.trim()))];
+                        const hashtagContent = uniqueHashtags.map(tag => `<p>${tag}</p>`).join('');
+                        setContent(hashtagContent);
+                        toast.success(t('editor.hashtagsExtracted', { count: uniqueHashtags.length }) || `${uniqueHashtags.length} hashtags extracted`);
+                      } else {
+                        toast.error(t('editor.noHashtagsFound') || 'No hashtags found in content');
+                      }
+                    }}>
+                      <Replace className="h-4 w-4 mr-2" />
+                      {t('editor.replaceContent', 'Replace Content')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const hashtagRegex = /#[\p{L}\p{N}_]+/gu;
+                      const hashtags = plainText.match(hashtagRegex);
+                      if (hashtags && hashtags.length > 0) {
+                        const uniqueHashtags = [...new Set(hashtags.map(h => h.trim()))];
+                        await navigator.clipboard.writeText(uniqueHashtags.join('\n'));
+                        toast.success(t('editor.hashtagsCopied', { count: uniqueHashtags.length }) || `${uniqueHashtags.length} hashtags copied to clipboard`);
+                      } else {
+                        toast.error(t('editor.noHashtagsFound') || 'No hashtags found in content');
                       }
                     }}>
                       <Copy className="h-4 w-4 mr-2" />
