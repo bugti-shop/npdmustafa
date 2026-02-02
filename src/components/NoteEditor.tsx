@@ -23,7 +23,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Palette } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, Palette } from 'lucide-react';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1222,6 +1222,37 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                 }}>
                   <Mail className="h-4 w-4 mr-2" />
                   {t('editor.extractEmails', 'Extract Emails')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  // Extract all phone numbers from content using regex
+                  const plainText = content.replace(/<[^>]*>/g, ' '); // Remove HTML tags
+                  // Match various phone number formats: +1234567890, (123) 456-7890, 123-456-7890, 123.456.7890, 1234567890, etc.
+                  const phoneRegex = /(?:\+?\d{1,4}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g;
+                  const phones = plainText.match(phoneRegex);
+                  
+                  if (phones && phones.length > 0) {
+                    // Filter out numbers that are too short (less than 7 digits) or too long
+                    const validPhones = phones.filter(phone => {
+                      const digitsOnly = phone.replace(/\D/g, '');
+                      return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+                    });
+                    
+                    if (validPhones.length > 0) {
+                      // Get unique phones and clean them up
+                      const uniquePhones = [...new Set(validPhones.map(p => p.trim()))];
+                      // Replace content with only phone numbers, one per line
+                      const phoneContent = uniquePhones.map(phone => `<p>${phone}</p>`).join('');
+                      setContent(phoneContent);
+                      toast.success(t('editor.phonesExtracted', { count: uniquePhones.length }) || `${uniquePhones.length} phone numbers extracted`);
+                    } else {
+                      toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                    }
+                  } else {
+                    toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                  }
+                }}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  {t('editor.extractPhones', 'Extract Phone Numbers')}
                 </DropdownMenuItem>
                 {note && (
                   <DropdownMenuItem onClick={() => setIsVersionHistoryOpen(true)}>
