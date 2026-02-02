@@ -743,7 +743,30 @@
       "extraLoose": "Extra Loose"
     },
     "imageAligned": "Image aligned {{align}}",
-    "imageDeleted": "Image deleted"
+    "imageDeleted": "Image deleted",
+    "setPinLock": "Set PIN Lock",
+    "managePinLock": "Manage PIN Lock"
+  },
+  "notePin": {
+    "setPin": "Set PIN",
+    "confirmPin": "Confirm PIN",
+    "enterCurrentPin": "Enter Current PIN",
+    "enterNewPin": "Enter New PIN",
+    "confirmNewPin": "Confirm New PIN",
+    "enter4Digits": "Enter a 4-digit PIN to protect this note",
+    "reenterPin": "Re-enter the PIN to confirm",
+    "verifyToChange": "Enter your current PIN to make changes",
+    "pinSet": "PIN set successfully",
+    "pinRemoved": "PIN removed",
+    "pinMismatch": "PINs do not match",
+    "incorrectPin": "Incorrect PIN",
+    "removePin": "Remove PIN",
+    "unlockNote": "Unlock Note",
+    "enterPinFor": "Enter PIN to access \"{{title}}\"",
+    "enterPinToAccess": "Enter PIN to access this note",
+    "unlocked": "Note unlocked",
+    "tooManyAttempts": "Too many failed attempts",
+    "attemptsRemaining": "{{count}} attempts remaining"
   },
   "dateTime": {
     "date": "Date",

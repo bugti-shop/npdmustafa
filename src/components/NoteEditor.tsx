@@ -23,7 +23,9 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, LinkIcon, Copy, Replace, Palette, Hash } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, LinkIcon, Copy, Replace, Palette, Hash, KeyRound } from 'lucide-react';
+import { NotePinSetupSheet } from './NotePinSetupSheet';
+import { hasNotePin } from '@/utils/notePinStorage';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -157,6 +159,10 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
   const [isCommentInputOpen, setIsCommentInputOpen] = useState(false);
   const [isMetaDescInputOpen, setIsMetaDescInputOpen] = useState(false);
   
+  // PIN lock state
+  const [isPinSetupOpen, setIsPinSetupOpen] = useState(false);
+  const [hasPinLock, setHasPinLock] = useState(false);
+  
   const editorRef = useRef<HTMLDivElement>(null);
   
   // Handle voice recording completion - insert inline at cursor position
@@ -275,6 +281,9 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       setCodeContent(note.codeContent || '');
       setCodeLanguage(note.codeLanguage || 'auto');
       setMetaDescription(note.metaDescription || '');
+      
+      // Check if note has PIN lock
+      hasNotePin(note.id).then(setHasPinLock);
       
     } else {
       // Reset draft ID for new notes to prevent overwriting
@@ -1408,10 +1417,19 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                 </DropdownMenu>
                 <DropdownMenuSeparator />
                 {note && (
-                  <DropdownMenuItem onClick={() => setIsVersionHistoryOpen(true)}>
-                    <History className="h-4 w-4 mr-2" />
-                    {t('editor.versionHistory')}
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => setIsPinSetupOpen(true)}>
+                      <KeyRound className="h-4 w-4 mr-2" />
+                      {hasPinLock 
+                        ? t('editor.managePinLock', 'Manage PIN Lock') 
+                        : t('editor.setPinLock', 'Set PIN Lock')
+                      }
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsVersionHistoryOpen(true)}>
+                      <History className="h-4 w-4 mr-2" />
+                      {t('editor.versionHistory')}
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1744,6 +1762,18 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
             handleVoiceRecordingComplete(blob, url, duration);
             setShowVoiceRecorder(false);
             toast.success(t('voice.recordingAdded', 'Voice recording added'));
+          }}
+        />
+      )}
+
+      {/* PIN Lock Setup Sheet */}
+      {note && (
+        <NotePinSetupSheet
+          isOpen={isPinSetupOpen}
+          onClose={() => setIsPinSetupOpen(false)}
+          noteId={note.id}
+          onPinChanged={() => {
+            hasNotePin(note.id).then(setHasPinLock);
           }}
         />
       )}
