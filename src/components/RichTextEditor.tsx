@@ -48,7 +48,6 @@ const saveFavorites = (favorites: string[]) => {
 };
 
 import { VoiceRecording } from '@/types/note';
-import { NoteVoicePlayer } from './NoteVoicePlayer';
 
 interface RichTextEditorProps {
   content: string;
@@ -81,9 +80,10 @@ interface RichTextEditorProps {
    * We must not overwrite innerHTML from `content` prop (it would remove highlights).
    */
   isFindReplaceOpen?: boolean;
-  // Voice recordings support for non-voice note types
+  // Voice recordings support - insert at cursor position
   voiceRecordings?: VoiceRecording[];
   onVoiceRecordingDelete?: (id: string) => void;
+  onInsertVoiceRecording?: (recording: VoiceRecording) => void;
 }
 
 const COLORS = [
@@ -446,6 +446,65 @@ export const RichTextEditor = ({
     document.addEventListener('selectionchange', handleSelectionChange);
     return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, [updateActiveStates]);
+
+  // Setup audio progress tracking for inline voice recordings
+  useEffect(() => {
+    const setupAudioListeners = () => {
+      if (!editorRef.current) return;
+      
+      const audioElements = editorRef.current.querySelectorAll('.voice-recording-inline audio');
+      audioElements.forEach((audio: Element) => {
+        const audioEl = audio as HTMLAudioElement;
+        const container = audioEl.closest('.voice-recording-inline');
+        if (!container) return;
+        
+        const progressBar = container.querySelector('.voice-progress') as HTMLElement;
+        const durationSpan = container.querySelector('span') as HTMLElement;
+        
+        const updateProgress = () => {
+          if (progressBar && audioEl.duration) {
+            const progress = (audioEl.currentTime / audioEl.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+          }
+          if (durationSpan) {
+            const current = audioEl.currentTime;
+            const mins = Math.floor(current / 60);
+            const secs = Math.floor(current % 60);
+            durationSpan.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+          }
+        };
+        
+        const resetPlayer = () => {
+          if (progressBar) progressBar.style.width = '0%';
+          const btn = container.querySelector('button svg');
+          if (btn) btn.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+          // Reset duration display
+          const duration = parseFloat(audioEl.dataset.duration || '0');
+          if (durationSpan) {
+            const mins = Math.floor(duration / 60);
+            const secs = Math.floor(duration % 60);
+            durationSpan.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+          }
+        };
+        
+        audioEl.removeEventListener('timeupdate', updateProgress);
+        audioEl.removeEventListener('ended', resetPlayer);
+        audioEl.addEventListener('timeupdate', updateProgress);
+        audioEl.addEventListener('ended', resetPlayer);
+      });
+    };
+    
+    // Run on mount and when content changes
+    setupAudioListeners();
+    
+    // Use MutationObserver to detect new audio elements
+    const observer = new MutationObserver(setupAudioListeners);
+    if (editorRef.current) {
+      observer.observe(editorRef.current, { childList: true, subtree: true });
+    }
+    
+    return () => observer.disconnect();
+  }, [content]);
 
   const toggleFavorite = useCallback((fontValue: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -2109,11 +2168,24 @@ export const RichTextEditor = ({
           .audio-player-container audio::-webkit-media-controls-panel {
             background: transparent;
           }
+          /* Inline voice recording styles */
+          .voice-recording-inline {
+            user-select: none;
+          }
+          .voice-recording-inline button:hover {
+            opacity: 0.9;
+          }
+          .voice-recording-inline button:active {
+            transform: scale(0.95);
+          }
           /* Print styles for page breaks */
           @media print {
             .rich-text-editor .page-break-container {
               page-break-after: always;
               break-after: page;
+            }
+            .voice-recording-inline {
+              display: none;
             }
           }
         `}
@@ -2215,27 +2287,6 @@ export const RichTextEditor = ({
         suppressContentEditableWarning
       />
 
-      {/* Voice Recordings Display */}
-      {voiceRecordings.length > 0 && (
-        <div 
-          className="fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t px-3 py-2 space-y-2 max-h-40 overflow-y-auto"
-          style={{ 
-            bottom: toolbarPosition === 'bottom' 
-              ? 'calc(env(safe-area-inset-bottom) + var(--keyboard-inset, 0px) + 40px)' 
-              : 'calc(env(safe-area-inset-bottom) + var(--keyboard-inset, 0px))'
-          }}
-        >
-          {voiceRecordings.map((recording) => (
-            <NoteVoicePlayer
-              key={recording.id}
-              audioUrl={recording.audioUrl}
-              duration={recording.duration}
-              onDelete={onVoiceRecordingDelete ? () => onVoiceRecordingDelete(recording.id) : undefined}
-              className="shadow-sm"
-            />
-          ))}
-        </div>
-      )}
 
       {toolbarPosition === 'bottom' && (
         <div

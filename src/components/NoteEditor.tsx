@@ -158,7 +158,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
   
   const editorRef = useRef<HTMLDivElement>(null);
   
-  // Handle voice recording completion
+  // Handle voice recording completion - insert inline at cursor position
   const handleVoiceRecordingComplete = useCallback((audioBlob: Blob, audioUrl: string, duration: number) => {
     const newRecording: VoiceRecording = {
       id: `voice-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -167,6 +167,35 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       timestamp: new Date(),
     };
     setVoiceRecordings(prev => [...prev, newRecording]);
+    
+    // Insert audio player HTML at cursor position in the editor
+    const formatDuration = (secs: number) => {
+      const mins = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${mins}:${s.toString().padStart(2, '0')}`;
+    };
+    
+    const audioPlayerHtml = `
+      <div class="voice-recording-inline" data-voice-id="${newRecording.id}" contenteditable="false" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin: 8px 0; background: hsl(var(--muted) / 0.6); border-radius: 8px; border: 1px solid hsl(var(--border) / 0.4);">
+        <audio src="${audioUrl}" style="display: none;" data-duration="${duration}"></audio>
+        <button onclick="(function(btn){var audio=btn.parentElement.querySelector('audio');var icon=btn.querySelector('svg');if(audio.paused){audio.play();icon.innerHTML='<rect x=\\'6\\' y=\\'4\\' width=\\'4\\' height=\\'16\\'></rect><rect x=\\'14\\' y=\\'4\\' width=\\'4\\' height=\\'16\\'></rect>';}else{audio.pause();icon.innerHTML='<polygon points=\\'5 3 19 12 5 21 5 3\\'></polygon>';}})(this)" style="width: 32px; height: 32px; border-radius: 50%; background: hsl(var(--primary)); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary-foreground))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </button>
+        <div style="flex: 1; height: 6px; background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; overflow: hidden;">
+          <div class="voice-progress" style="height: 100%; width: 0%; background: hsl(var(--primary)); transition: width 0.1s;"></div>
+        </div>
+        <span style="font-size: 12px; color: hsl(var(--muted-foreground)); min-width: 36px; text-align: right;">${formatDuration(duration)}</span>
+      </div>
+    `.trim();
+    
+    // Try to insert at cursor position
+    if (editorRef.current) {
+      editorRef.current.focus();
+      document.execCommand('insertHTML', false, audioPlayerHtml + '<p><br></p>');
+    } else {
+      // Fallback: append to content
+      setContent(prev => prev + audioPlayerHtml);
+    }
   }, []);
   
   // Calculate stats
@@ -1255,14 +1284,6 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
               onVoiceRecord={() => setShowVoiceRecorder(true)}
               externalEditorRef={editorRef}
               isFindReplaceOpen={isFindReplaceOpen}
-              voiceRecordings={voiceRecordings}
-              onVoiceRecordingDelete={(id) => {
-                const recording = voiceRecordings.find(r => r.id === id);
-                if (recording) {
-                  URL.revokeObjectURL(recording.audioUrl);
-                }
-                setVoiceRecordings(prev => prev.filter(r => r.id !== id));
-              }}
             />
           )}
         </ErrorBoundary>
