@@ -23,7 +23,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, Palette } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Phone, LinkIcon, Copy, Replace, Palette } from 'lucide-react';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1203,57 +1203,165 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                   <FileType className="h-4 w-4 mr-2" />
                   {t('editor.exportPdf')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  // Extract all emails from content using regex
-                  const plainText = content.replace(/<[^>]*>/g, ' '); // Remove HTML tags
-                  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                  const emails = plainText.match(emailRegex);
-                  
-                  if (emails && emails.length > 0) {
-                    // Get unique emails
-                    const uniqueEmails = [...new Set(emails)];
-                    // Replace content with only emails, one per line
-                    const emailContent = uniqueEmails.map(email => `<p>${email}</p>`).join('');
-                    setContent(emailContent);
-                    toast.success(t('editor.emailsExtracted', { count: uniqueEmails.length }) || `${uniqueEmails.length} emails extracted`);
-                  } else {
-                    toast.error(t('editor.noEmailsFound') || 'No emails found in content');
-                  }
-                }}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  {t('editor.extractEmails', 'Extract Emails')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  // Extract all phone numbers from content using regex
-                  const plainText = content.replace(/<[^>]*>/g, ' '); // Remove HTML tags
-                  // Match various phone number formats: +1234567890, (123) 456-7890, 123-456-7890, 123.456.7890, 1234567890, etc.
-                  const phoneRegex = /(?:\+?\d{1,4}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g;
-                  const phones = plainText.match(phoneRegex);
-                  
-                  if (phones && phones.length > 0) {
-                    // Filter out numbers that are too short (less than 7 digits) or too long
-                    const validPhones = phones.filter(phone => {
-                      const digitsOnly = phone.replace(/\D/g, '');
-                      return digitsOnly.length >= 7 && digitsOnly.length <= 15;
-                    });
-                    
-                    if (validPhones.length > 0) {
-                      // Get unique phones and clean them up
-                      const uniquePhones = [...new Set(validPhones.map(p => p.trim()))];
-                      // Replace content with only phone numbers, one per line
-                      const phoneContent = uniquePhones.map(phone => `<p>${phone}</p>`).join('');
-                      setContent(phoneContent);
-                      toast.success(t('editor.phonesExtracted', { count: uniquePhones.length }) || `${uniquePhones.length} phone numbers extracted`);
-                    } else {
-                      toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
-                    }
-                  } else {
-                    toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
-                  }
-                }}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  {t('editor.extractPhones', 'Extract Phone Numbers')}
-                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {/* Email Extractor with submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                      <Mail className="h-4 w-4 mr-2" />
+                      {t('editor.extractEmails', 'Extract Emails')}
+                      <ChevronDown className="h-3 w-3 ml-auto" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="bg-popover z-[9999]">
+                    <DropdownMenuItem onClick={() => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                      const emails = plainText.match(emailRegex);
+                      if (emails && emails.length > 0) {
+                        const uniqueEmails = [...new Set(emails)];
+                        const emailContent = uniqueEmails.map(email => `<p>${email}</p>`).join('');
+                        setContent(emailContent);
+                        toast.success(t('editor.emailsExtracted', { count: uniqueEmails.length }) || `${uniqueEmails.length} emails extracted`);
+                      } else {
+                        toast.error(t('editor.noEmailsFound') || 'No emails found in content');
+                      }
+                    }}>
+                      <Replace className="h-4 w-4 mr-2" />
+                      {t('editor.replaceContent', 'Replace Content')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                      const emails = plainText.match(emailRegex);
+                      if (emails && emails.length > 0) {
+                        const uniqueEmails = [...new Set(emails)];
+                        await navigator.clipboard.writeText(uniqueEmails.join('\n'));
+                        toast.success(t('editor.emailsCopied', { count: uniqueEmails.length }) || `${uniqueEmails.length} emails copied to clipboard`);
+                      } else {
+                        toast.error(t('editor.noEmailsFound') || 'No emails found in content');
+                      }
+                    }}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('editor.copyToClipboard', 'Copy to Clipboard')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Phone Extractor with submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                      <Phone className="h-4 w-4 mr-2" />
+                      {t('editor.extractPhones', 'Extract Phone Numbers')}
+                      <ChevronDown className="h-3 w-3 ml-auto" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="bg-popover z-[9999]">
+                    <DropdownMenuItem onClick={() => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const phoneRegex = /(?:\+?\d{1,4}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g;
+                      const phones = plainText.match(phoneRegex);
+                      if (phones && phones.length > 0) {
+                        const validPhones = phones.filter(phone => {
+                          const digitsOnly = phone.replace(/\D/g, '');
+                          return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+                        });
+                        if (validPhones.length > 0) {
+                          const uniquePhones = [...new Set(validPhones.map(p => p.trim()))];
+                          const phoneContent = uniquePhones.map(phone => `<p>${phone}</p>`).join('');
+                          setContent(phoneContent);
+                          toast.success(t('editor.phonesExtracted', { count: uniquePhones.length }) || `${uniquePhones.length} phone numbers extracted`);
+                        } else {
+                          toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                        }
+                      } else {
+                        toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                      }
+                    }}>
+                      <Replace className="h-4 w-4 mr-2" />
+                      {t('editor.replaceContent', 'Replace Content')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const phoneRegex = /(?:\+?\d{1,4}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g;
+                      const phones = plainText.match(phoneRegex);
+                      if (phones && phones.length > 0) {
+                        const validPhones = phones.filter(phone => {
+                          const digitsOnly = phone.replace(/\D/g, '');
+                          return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+                        });
+                        if (validPhones.length > 0) {
+                          const uniquePhones = [...new Set(validPhones.map(p => p.trim()))];
+                          await navigator.clipboard.writeText(uniquePhones.join('\n'));
+                          toast.success(t('editor.phonesCopied', { count: uniquePhones.length }) || `${uniquePhones.length} phone numbers copied to clipboard`);
+                        } else {
+                          toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                        }
+                      } else {
+                        toast.error(t('editor.noPhonesFound') || 'No phone numbers found in content');
+                      }
+                    }}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('editor.copyToClipboard', 'Copy to Clipboard')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* URL Extractor with submenu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      {t('editor.extractUrls', 'Extract URLs')}
+                      <ChevronDown className="h-3 w-3 ml-auto" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="bg-popover z-[9999]">
+                    <DropdownMenuItem onClick={() => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      // Also extract URLs from href attributes
+                      const hrefRegex = /href=["']([^"']+)["']/gi;
+                      const hrefMatches = [...content.matchAll(hrefRegex)].map(m => m[1]);
+                      // Match various URL formats
+                      const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+                      const urls = plainText.match(urlRegex) || [];
+                      const allUrls = [...urls, ...hrefMatches];
+                      
+                      if (allUrls.length > 0) {
+                        const uniqueUrls = [...new Set(allUrls.map(url => url.trim().replace(/[.,;:!?)]+$/, '')))];
+                        const urlContent = uniqueUrls.map(url => `<p><a href="${url}" target="_blank">${url}</a></p>`).join('');
+                        setContent(urlContent);
+                        toast.success(t('editor.urlsExtracted', { count: uniqueUrls.length }) || `${uniqueUrls.length} URLs extracted`);
+                      } else {
+                        toast.error(t('editor.noUrlsFound') || 'No URLs found in content');
+                      }
+                    }}>
+                      <Replace className="h-4 w-4 mr-2" />
+                      {t('editor.replaceContent', 'Replace Content')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const plainText = content.replace(/<[^>]*>/g, ' ');
+                      const hrefRegex = /href=["']([^"']+)["']/gi;
+                      const hrefMatches = [...content.matchAll(hrefRegex)].map(m => m[1]);
+                      const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+                      const urls = plainText.match(urlRegex) || [];
+                      const allUrls = [...urls, ...hrefMatches];
+                      
+                      if (allUrls.length > 0) {
+                        const uniqueUrls = [...new Set(allUrls.map(url => url.trim().replace(/[.,;:!?)]+$/, '')))];
+                        await navigator.clipboard.writeText(uniqueUrls.join('\n'));
+                        toast.success(t('editor.urlsCopied', { count: uniqueUrls.length }) || `${uniqueUrls.length} URLs copied to clipboard`);
+                      } else {
+                        toast.error(t('editor.noUrlsFound') || 'No URLs found in content');
+                      }
+                    }}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('editor.copyToClipboard', 'Copy to Clipboard')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenuSeparator />
                 {note && (
                   <DropdownMenuItem onClick={() => setIsVersionHistoryOpen(true)}>
                     <History className="h-4 w-4 mr-2" />
