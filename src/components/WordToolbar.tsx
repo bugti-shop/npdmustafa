@@ -454,86 +454,73 @@ export const WordToolbar = ({
     )}>
       {/* Single Line Toolbar with Horizontal Scroll - Matching reference design */}
       <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide whitespace-nowrap h-14">
-        {/* Basic Formatting - B I U S */}
+        
+        {/* Row 1: B I U A̲ S Tт 🖼 ✏ ≡ 1≡ */}
+        
+        {/* Bold - B */}
         <ToolbarButton onClick={onBold} title="Bold (Ctrl+B)" isActive={isBold}>
           <span className="text-xl font-black">B</span>
         </ToolbarButton>
+        
+        {/* Italic - I */}
         <ToolbarButton onClick={onItalic} title="Italic (Ctrl+I)" isActive={isItalic}>
           <span className="text-xl italic font-medium">I</span>
         </ToolbarButton>
+        
+        {/* Underline - U */}
         <ToolbarButton onClick={onUnderline} title="Underline (Ctrl+U)" isActive={isUnderline}>
-          <span className="text-xl underline font-medium">U</span>
+          <span className="text-xl font-medium border-b-2 border-current pb-0.5">U</span>
         </ToolbarButton>
-        {onStrikethrough && (
-          <ToolbarButton onClick={onStrikethrough} title="Strikethrough" isActive={isStrikethrough}>
-            <Strikethrough className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-
-        {/* Highlight with color indicator - right after basic formatting */}
+        
+        {/* Text Color - A with colored underline */}
         <Popover>
           <PopoverTrigger asChild>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-1 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
-              title="Highlight"
+              className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-0.5 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              title="Text Color"
             >
-              <Highlighter className="h-8 w-8 stroke-[2.5] text-foreground" />
-              <div className="h-1 w-8 rounded-sm bg-amber-300" />
+              <span className="text-xl font-bold">A</span>
+              <div className="h-1.5 w-7 rounded-sm bg-violet-600" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-            <p className="text-xs text-muted-foreground mb-2">Highlight Colors</p>
+            <p className="text-xs text-muted-foreground mb-2">Text Colors</p>
             <div className="grid grid-cols-8 gap-1">
-              {HIGHLIGHT_COLORS.map((color) => (
+              {TEXT_COLORS.map((color) => (
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => onHighlight(color.value)}
+                  onClick={() => onTextColor(color.value)}
                   className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: color.value === 'transparent' ? 'white' : color.value }}
+                  style={{ backgroundColor: color.value }}
                   title={color.name}
                 />
               ))}
             </div>
           </PopoverContent>
         </Popover>
-
-        {/* Font Family (T) */}
-        {onFontFamily && (
-          <Popover open={fontPickerOpen} onOpenChange={setFontPickerOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-1 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" title="Font">
-                <Type className="h-8 w-8 stroke-[2.5] text-foreground" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-1 max-h-[300px] overflow-y-auto">
-              {FONT_FAMILIES.map((font) => (
-                <Button
-                  key={font.value}
-                  variant={currentFontFamily === font.value ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start"
-                  style={{ fontFamily: font.value }}
-                  onClick={() => {
-                    onFontFamily(font.value);
-                    setFontPickerOpen(false);
-                  }}
-                >
-                  {font.name}
-                </Button>
-              ))}
-            </PopoverContent>
-          </Popover>
+        
+        {/* Strikethrough - S */}
+        {onStrikethrough && (
+          <ToolbarButton onClick={onStrikethrough} title="Strikethrough" isActive={isStrikethrough}>
+            <span className="text-xl font-medium line-through">S</span>
+          </ToolbarButton>
         )}
-
-        {/* Font Size */}
+        
+        {/* Font Size - Tt */}
         {onFontSize && (
           <Popover open={fontSizePickerOpen} onOpenChange={setFontSizePickerOpen}>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-1 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" title="Font Size">
-                <span className="text-base font-bold">{currentFontSize}px</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+                title="Font Size"
+              >
+                <span className="text-xl font-bold">T</span>
+                <span className="text-sm font-medium -ml-0.5 mt-1">t</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-24 p-1 max-h-[200px] overflow-y-auto">
@@ -554,68 +541,105 @@ export const WordToolbar = ({
             </PopoverContent>
           </Popover>
         )}
-
-        {/* Subscript & Superscript */}
-        {onSubscript && (
-          <ToolbarButton onClick={onSubscript} title="Subscript" isActive={isSubscript}>
-            <Subscript className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-        {onSuperscript && (
-          <ToolbarButton onClick={onSuperscript} title="Superscript" isActive={isSuperscript}>
-            <Superscript className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-        {/* Attachment */}
-        {onAttachment && (
-          <ToolbarButton onClick={onAttachment} title="Attach File">
-            <Paperclip className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-
-        {onClearFormatting && (
-          <ToolbarButton onClick={onClearFormatting} title="Clear Formatting">
-            <RemoveFormatting className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-        {onHorizontalRule && (
-          <ToolbarButton onClick={onHorizontalRule} title="Insert Horizontal Rule">
-            <Minus className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-        {/* Comment - moved near formatting */}
-        {onComment && (
-          <ToolbarButton onClick={onComment} title="Add Comment">
-            <MessageSquare className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-
-        {/* Emoji picker */}
-        {onEmojiInsert && (
-          <EmojiPicker onEmojiSelect={onEmojiInsert} />
-        )}
-
-        {/* Lists - no separator, equal spacing */}
-        <ToolbarButton onClick={onBulletList} title="Bullet List" isActive={isBulletList}>
-          <List className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onNumberedList} title="Numbered List" isActive={isNumberedList}>
-          <ListOrdered className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-
-        {/* Image - no separator, equal spacing */}
+        
+        {/* Image - 🖼 */}
         {allowImages && (
           <ToolbarButton onClick={onImageUpload} title="Insert Image">
-            <ImageIcon className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <ImageIcon className="h-7 w-7 stroke-[2] text-foreground" />
           </ToolbarButton>
         )}
-
+        
+        {/* Highlighter - ✏ */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              title="Highlight"
+            >
+              <Highlighter className="h-7 w-7 stroke-[2] text-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
+            <p className="text-xs text-muted-foreground mb-2">Highlight Colors</p>
+            <div className="grid grid-cols-8 gap-1">
+              {HIGHLIGHT_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => onHighlight(color.value)}
+                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
+                  style={{ backgroundColor: color.value === 'transparent' ? 'white' : color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        
+        {/* Bullet List - ≡• */}
+        <ToolbarButton onClick={onBulletList} title="Bullet List" isActive={isBulletList}>
+          <List className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Numbered List - 1≡ */}
+        <ToolbarButton onClick={onNumberedList} title="Numbered List" isActive={isNumberedList}>
+          <ListOrdered className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        <ToolbarSeparator />
+        
+        {/* Row 2: ≡ ≡ ≡ ≡ ↩ ↪ — ⊞ X₂ X² 📎 */}
+        
+        {/* Align Left */}
+        <ToolbarButton onClick={onAlignLeft} title="Align Left" isActive={alignment === 'left'}>
+          <AlignLeft className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Center */}
+        <ToolbarButton onClick={onAlignCenter} title="Align Center" isActive={alignment === 'center'}>
+          <AlignCenter className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Right */}
+        <ToolbarButton onClick={onAlignRight} title="Align Right" isActive={alignment === 'right'}>
+          <AlignRight className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Justify */}
+        <ToolbarButton onClick={onAlignJustify} title="Justify" isActive={alignment === 'justify'}>
+          <AlignJustify className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Undo */}
+        <ToolbarButton onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+          <Undo className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Redo */}
+        <ToolbarButton onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+          <Redo className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Horizontal Rule */}
+        {onHorizontalRule && (
+          <ToolbarButton onClick={onHorizontalRule} title="Insert Horizontal Rule">
+            <Minus className="h-7 w-7 stroke-[3] text-foreground" />
+          </ToolbarButton>
+        )}
+        
         {/* Table */}
         {showTable && (
           <Popover open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" title="Insert Table">
-                <Table className="h-8 w-8 stroke-[2.5] text-foreground" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
+                title="Insert Table"
+              >
+                <Table className="h-7 w-7 stroke-[2] text-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4" align="start">
@@ -727,71 +751,87 @@ export const WordToolbar = ({
             </PopoverContent>
           </Popover>
         )}
-
+        
+        {/* Subscript - X₂ */}
+        {onSubscript && (
+          <ToolbarButton onClick={onSubscript} title="Subscript" isActive={isSubscript}>
+            <span className="flex items-end">
+              <span className="text-lg font-medium">X</span>
+              <span className="text-xs font-medium -mb-0.5">2</span>
+            </span>
+          </ToolbarButton>
+        )}
+        
+        {/* Superscript - X² */}
+        {onSuperscript && (
+          <ToolbarButton onClick={onSuperscript} title="Superscript" isActive={isSuperscript}>
+            <span className="flex items-start">
+              <span className="text-lg font-medium">X</span>
+              <span className="text-xs font-medium -mt-1">2</span>
+            </span>
+          </ToolbarButton>
+        )}
+        
+        {/* Attachment/Link - 📎 */}
+        {onAttachment && (
+          <ToolbarButton onClick={onAttachment} title="Attach File">
+            <Paperclip className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
+        {onInsertLink && (
+          <ToolbarButton onClick={onInsertLink} title="Insert Link">
+            <LinkIcon className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
         <ToolbarSeparator />
-
-        {/* Text Color with color indicator */}
+        
+        {/* Additional Tools (secondary row) */}
+        
+        {/* Font Family */}
+        {onFontFamily && (
+          <Popover open={fontPickerOpen} onOpenChange={setFontPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+                title="Font"
+              >
+                <Type className="h-7 w-7 stroke-[2] text-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1 max-h-[300px] overflow-y-auto">
+              {FONT_FAMILIES.map((font) => (
+                <Button
+                  key={font.value}
+                  variant={currentFontFamily === font.value ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  style={{ fontFamily: font.value }}
+                  onClick={() => {
+                    onFontFamily(font.value);
+                    setFontPickerOpen(false);
+                  }}
+                >
+                  {font.name}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
+        
+        {/* Headings */}
         <Popover>
           <PopoverTrigger asChild>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-1 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
-              title="Text Color"
+              className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
+              title="Headings"
             >
-              <span className="text-xl font-bold">A</span>
-              <div className="h-1 w-7 rounded-sm bg-red-500" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-            <p className="text-xs text-muted-foreground mb-2">Text Colors</p>
-            <div className="grid grid-cols-8 gap-1">
-              {TEXT_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => onTextColor(color.value)}
-                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        <ToolbarSeparator />
-
-        {/* Undo/Redo - moved after table */}
-        <ToolbarButton onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-          <Undo className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-          <Redo className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-
-        <ToolbarSeparator />
-
-        {/* Alignment */}
-        <ToolbarButton onClick={onAlignLeft} title="Align Left" isActive={alignment === 'left'}>
-          <AlignLeft className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onAlignCenter} title="Align Center" isActive={alignment === 'center'}>
-          <AlignCenter className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onAlignRight} title="Align Right" isActive={alignment === 'right'}>
-          <AlignRight className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onAlignJustify} title="Justify" isActive={alignment === 'justify'}>
-          <AlignJustify className="h-8 w-8 stroke-[2.5] text-foreground" />
-        </ToolbarButton>
-
-
-        {/* Headings */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" title="Headings">
-              <Heading1 className="h-8 w-8 stroke-[2.5] text-foreground" />
+              <Heading1 className="h-7 w-7 stroke-[2] text-foreground" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-32 p-1">
@@ -809,12 +849,17 @@ export const WordToolbar = ({
             </Button>
           </PopoverContent>
         </Popover>
-
+        
         {/* Text Case */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" title="Change Case">
-              <CaseSensitive className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
+              title="Change Case"
+            >
+              <CaseSensitive className="h-7 w-7 stroke-[2] text-foreground" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-40 p-1">
@@ -847,9 +892,13 @@ export const WordToolbar = ({
             </Button>
           </PopoverContent>
         </Popover>
-
-        <ToolbarSeparator />
-
+        
+        {onClearFormatting && (
+          <ToolbarButton onClick={onClearFormatting} title="Clear Formatting">
+            <RemoveFormatting className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
         {/* Text Direction */}
         {onTextDirection && (
           <>
@@ -858,43 +907,46 @@ export const WordToolbar = ({
               title="Left to Right"
               isActive={textDirection === 'ltr'}
             >
-              <PilcrowLeft className="h-8 w-8 stroke-[2.5] text-foreground" />
+              <PilcrowLeft className="h-7 w-7 stroke-[2] text-foreground" />
             </ToolbarButton>
             <ToolbarButton 
               onClick={() => onTextDirection('rtl')} 
               title="Right to Left"
               isActive={textDirection === 'rtl'}
             >
-              <PilcrowRight className="h-8 w-8 stroke-[2.5] text-foreground" />
+              <PilcrowRight className="h-7 w-7 stroke-[2] text-foreground" />
             </ToolbarButton>
-            <ToolbarSeparator />
           </>
         )}
-
-
-        {/* Link */}
-        {onInsertLink && (
-          <ToolbarButton onClick={onInsertLink} title="Insert Link">
-            <LinkIcon className="h-8 w-8 stroke-[2.5] text-foreground" />
-          </ToolbarButton>
-        )}
-
+        
         {/* Note Link */}
         {onInsertNoteLink && (
           <ToolbarButton onClick={onInsertNoteLink} title="Link to Note">
-            <Link2 className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <Link2 className="h-7 w-7 stroke-[2] text-foreground" />
           </ToolbarButton>
         )}
-
+        
+        {/* Emoji picker */}
+        {onEmojiInsert && (
+          <EmojiPicker onEmojiSelect={onEmojiInsert} />
+        )}
+        
+        {/* Comment */}
+        {onComment && (
+          <ToolbarButton onClick={onComment} title="Add Comment">
+            <MessageSquare className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
         {/* Voice Record */}
         {onVoiceRecord && (
           <ToolbarButton onClick={onVoiceRecord} title="Voice Recording">
-            <Mic className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <Mic className="h-7 w-7 stroke-[2] text-foreground" />
           </ToolbarButton>
         )}
-
+        
         <ToolbarSeparator />
-
+        
         {/* Zoom Controls */}
         <div className="flex items-center gap-0 flex-shrink-0">
           <ToolbarButton 
@@ -902,7 +954,7 @@ export const WordToolbar = ({
             title="Zoom Out"
             disabled={zoom <= 50}
           >
-            <ZoomOut className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <ZoomOut className="h-7 w-7 stroke-[2] text-foreground" />
           </ToolbarButton>
           
           <div className="w-16 mx-1">
@@ -925,7 +977,7 @@ export const WordToolbar = ({
             title="Zoom In"
             disabled={zoom >= 200}
           >
-            <ZoomIn className="h-8 w-8 stroke-[2.5] text-foreground" />
+            <ZoomIn className="h-7 w-7 stroke-[2] text-foreground" />
           </ToolbarButton>
         </div>
       </div>
