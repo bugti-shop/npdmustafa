@@ -448,6 +448,9 @@ export const RichTextEditor = ({
   }, [updateActiveStates]);
 
   // Setup audio progress tracking and event delegation for inline voice recordings
+  // Use a ref for the click handler to avoid recreating on every content change
+  const audioClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+  
   useEffect(() => {
     if (!editorRef.current) return;
 
@@ -465,6 +468,10 @@ export const RichTextEditor = ({
         const audioEl = audio as HTMLAudioElement;
         const container = audioEl.closest('.voice-recording-inline') as HTMLElement;
         if (!container) return;
+        
+        // Mark as initialized to avoid duplicate listeners
+        if (container.dataset.initialized === 'true') return;
+        container.dataset.initialized = 'true';
         
         const progressBar = container.querySelector('.waveform-progress') as HTMLElement;
         const durationSpan = container.querySelector('.voice-duration') as HTMLElement;
@@ -499,11 +506,6 @@ export const RichTextEditor = ({
           if (pauseIcon) pauseIcon.style.display = 'none';
         };
         
-        // Remove old listeners and add new ones
-        audioEl.removeEventListener('timeupdate', updateProgress);
-        audioEl.removeEventListener('ended', resetPlayer);
-        audioEl.removeEventListener('play', handlePlay);
-        audioEl.removeEventListener('pause', handlePause);
         audioEl.addEventListener('timeupdate', updateProgress);
         audioEl.addEventListener('ended', resetPlayer);
         audioEl.addEventListener('play', handlePlay);
@@ -511,7 +513,7 @@ export const RichTextEditor = ({
       });
     };
     
-    // Event delegation for play/pause and delete buttons
+    // Event delegation for play/pause, speed, seek, and delete buttons
     const handleEditorClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       
@@ -520,6 +522,7 @@ export const RichTextEditor = ({
       if (playBtn) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         const container = playBtn.closest('.voice-recording-inline');
         const audio = container?.querySelector('audio') as HTMLAudioElement;
         if (audio) {
@@ -541,6 +544,7 @@ export const RichTextEditor = ({
       if (deleteBtn) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         const container = deleteBtn.closest('.voice-recording-inline');
         const audio = container?.querySelector('audio') as HTMLAudioElement;
         if (audio) {
@@ -561,6 +565,7 @@ export const RichTextEditor = ({
       if (speedBtn) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         const container = speedBtn.closest('.voice-recording-inline') as HTMLElement;
         const audio = container?.querySelector('audio') as HTMLAudioElement;
         if (audio) {
@@ -582,6 +587,7 @@ export const RichTextEditor = ({
       if (seekArea) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         const container = seekArea.closest('.voice-recording-inline') as HTMLElement;
         const audio = container?.querySelector('audio') as HTMLAudioElement;
         if (audio && audio.duration) {
@@ -609,11 +615,45 @@ export const RichTextEditor = ({
       }
     };
     
+    // Handle touch events for mobile - convert touchend to click-like behavior
+    const handleEditorTouch = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Check if touching any of the interactive voice recording elements
+      const isInteractiveElement = 
+        target.closest('.voice-play-btn') ||
+        target.closest('.voice-speed-btn') ||
+        target.closest('.voice-delete-btn') ||
+        target.closest('.voice-seek-area');
+      
+      if (isInteractiveElement) {
+        e.preventDefault();
+        // Create a synthetic click event at the touch location
+        const touch = e.changedTouches[0];
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        });
+        target.dispatchEvent(clickEvent);
+      }
+    };
+    
     // Run on mount and when content changes
     setupAudioListeners();
     
-    // Add event delegation
-    editorRef.current.addEventListener('click', handleEditorClick);
+    // Remove old handler if exists
+    if (audioClickHandlerRef.current) {
+      editorRef.current.removeEventListener('click', audioClickHandlerRef.current, true);
+    }
+    
+    // Store the handler reference
+    audioClickHandlerRef.current = handleEditorClick;
+    
+    // Add event delegation with capture phase to intercept before contenteditable
+    editorRef.current.addEventListener('click', handleEditorClick, true);
+    editorRef.current.addEventListener('touchend', handleEditorTouch, true);
     
     // Use MutationObserver to detect new audio elements
     const observer = new MutationObserver(setupAudioListeners);
@@ -623,9 +663,14 @@ export const RichTextEditor = ({
     
     return () => {
       observer.disconnect();
-      editorRef.current?.removeEventListener('click', handleEditorClick);
+      if (editorRef.current) {
+        if (audioClickHandlerRef.current) {
+          editorRef.current.removeEventListener('click', audioClickHandlerRef.current, true);
+        }
+        editorRef.current.removeEventListener('touchend', handleEditorTouch, true);
+      }
     };
-  }, [content]);
+  }, []);
 
   const toggleFavorite = useCallback((fontValue: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -2301,13 +2346,15 @@ export const RichTextEditor = ({
             border: 1px solid hsl(var(--border) / 0.3);
             user-select: none;
             max-width: 320px;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
           }
           .voice-recording-inline audio {
             display: none;
           }
           .voice-recording-inline .voice-play-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: hsl(var(--primary));
             color: hsl(var(--primary-foreground));
@@ -2318,6 +2365,9 @@ export const RichTextEditor = ({
             cursor: pointer;
             flex-shrink: 0;
             transition: transform 0.15s, background 0.15s;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
           }
           .voice-recording-inline .voice-play-btn:hover {
             background: hsl(var(--primary) / 0.9);
@@ -2327,6 +2377,7 @@ export const RichTextEditor = ({
           }
           .voice-recording-inline .voice-play-btn svg {
             margin-left: 2px;
+            pointer-events: none;
           }
           .voice-recording-inline .voice-play-btn .pause-icon {
             margin-left: 0;
@@ -2334,14 +2385,17 @@ export const RichTextEditor = ({
           .voice-recording-inline .voice-waveform {
             flex: 1;
             position: relative;
-            height: 24px;
+            height: 28px;
             display: flex;
             align-items: center;
-            min-width: 120px;
+            min-width: 100px;
             cursor: pointer;
             padding: 4px 0;
             border-radius: 4px;
             transition: background 0.15s;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
           }
           .voice-recording-inline .voice-waveform:hover {
             background: hsl(var(--muted-foreground) / 0.08);
@@ -2352,6 +2406,7 @@ export const RichTextEditor = ({
           .voice-recording-inline .waveform-background {
             position: relative;
             z-index: 1;
+            pointer-events: none;
           }
           .voice-recording-inline .waveform-progress {
             position: absolute;
@@ -2368,10 +2423,11 @@ export const RichTextEditor = ({
             min-width: 38px;
             text-align: right;
             flex-shrink: 0;
+            pointer-events: none;
           }
           .voice-recording-inline .voice-delete-btn {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: transparent;
             color: hsl(var(--destructive));
@@ -2383,24 +2439,33 @@ export const RichTextEditor = ({
             flex-shrink: 0;
             opacity: 0.6;
             transition: opacity 0.15s, background 0.15s;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
           }
           .voice-recording-inline .voice-delete-btn:hover {
             opacity: 1;
             background: hsl(var(--destructive) / 0.1);
           }
+          .voice-recording-inline .voice-delete-btn svg {
+            pointer-events: none;
+          }
           .voice-recording-inline .voice-speed-btn {
-            min-width: 36px;
-            height: 24px;
-            padding: 0 6px;
-            border-radius: 12px;
+            min-width: 40px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 14px;
             background: hsl(var(--muted-foreground) / 0.15);
             color: hsl(var(--foreground));
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             border: none;
             cursor: pointer;
             flex-shrink: 0;
             transition: background 0.15s, transform 0.1s;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
           }
           .voice-recording-inline .voice-speed-btn:hover {
             background: hsl(var(--muted-foreground) / 0.25);
