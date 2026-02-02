@@ -556,6 +556,27 @@ export const RichTextEditor = ({
         return;
       }
       
+      // Check if clicked on speed button
+      const speedBtn = target.closest('.voice-speed-btn') as HTMLElement;
+      if (speedBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = speedBtn.closest('.voice-recording-inline') as HTMLElement;
+        const audio = container?.querySelector('audio') as HTMLAudioElement;
+        if (audio) {
+          const speeds = [1, 1.5, 2];
+          const currentSpeed = parseFloat(container.dataset.speed || '1');
+          const currentIndex = speeds.indexOf(currentSpeed);
+          const nextIndex = (currentIndex + 1) % speeds.length;
+          const newSpeed = speeds[nextIndex];
+          
+          audio.playbackRate = newSpeed;
+          container.dataset.speed = String(newSpeed);
+          speedBtn.textContent = `${newSpeed}x`;
+        }
+        return;
+      }
+      
       // Check if clicked on waveform seek area
       const seekArea = target.closest('.voice-seek-area') as HTMLElement;
       if (seekArea) {
@@ -2366,6 +2387,26 @@ export const RichTextEditor = ({
           .voice-recording-inline .voice-delete-btn:hover {
             opacity: 1;
             background: hsl(var(--destructive) / 0.1);
+          }
+          .voice-recording-inline .voice-speed-btn {
+            min-width: 36px;
+            height: 24px;
+            padding: 0 6px;
+            border-radius: 12px;
+            background: hsl(var(--muted-foreground) / 0.15);
+            color: hsl(var(--foreground));
+            font-size: 11px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.15s, transform 0.1s;
+          }
+          .voice-recording-inline .voice-speed-btn:hover {
+            background: hsl(var(--muted-foreground) / 0.25);
+          }
+          .voice-recording-inline .voice-speed-btn:active {
+            transform: scale(0.95);
           }
           /* Print styles for page breaks */
           @media print {
