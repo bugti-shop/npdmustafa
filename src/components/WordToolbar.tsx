@@ -447,294 +447,343 @@ export const WordToolbar = ({
     <div className="w-px h-7 bg-border/30 mx-2" />
   );
 
-  // Define action type
-  type ToolbarAction = {
-    onClick?: (() => void) | undefined;
-    title: string;
-    isActive?: boolean;
-    isPopover?: string;
-    enabled?: boolean;
-    disabled?: boolean;
-  };
-
-  // Define clickable regions for Row 1 (10 icons: B, I, U, A, S, Tt, Image, Highlighter, BulletList, NumberedList)
-  const row1Actions: ToolbarAction[] = [
-    { onClick: onBold, title: 'Bold (Ctrl+B)', isActive: isBold },
-    { onClick: onItalic, title: 'Italic (Ctrl+I)', isActive: isItalic },
-    { onClick: onUnderline, title: 'Underline (Ctrl+U)', isActive: isUnderline },
-    { onClick: () => {}, title: 'Text Color', isPopover: 'textColor' },
-    { onClick: onStrikethrough, title: 'Strikethrough', isActive: isStrikethrough },
-    { onClick: () => {}, title: 'Font Size', isPopover: 'fontSize' },
-    { onClick: onImageUpload, title: 'Insert Image', enabled: allowImages },
-    { onClick: () => {}, title: 'Highlight', isPopover: 'highlight' },
-    { onClick: onBulletList, title: 'Bullet List', isActive: isBulletList },
-    { onClick: onNumberedList, title: 'Numbered List', isActive: isNumberedList },
-  ];
-
-  // Define clickable regions for Row 2 (11 icons: AlignL, AlignC, AlignR, AlignJ, Undo, Redo, HR, Table, Sub, Super, Link)
-  const row2Actions: ToolbarAction[] = [
-    { onClick: onAlignLeft, title: 'Align Left', isActive: alignment === 'left' },
-    { onClick: onAlignCenter, title: 'Align Center', isActive: alignment === 'center' },
-    { onClick: onAlignRight, title: 'Align Right', isActive: alignment === 'right' },
-    { onClick: onAlignJustify, title: 'Justify', isActive: alignment === 'justify' },
-    { onClick: onUndo, title: 'Undo (Ctrl+Z)', disabled: !canUndo },
-    { onClick: onRedo, title: 'Redo (Ctrl+Y)', disabled: !canRedo },
-    { onClick: onHorizontalRule, title: 'Horizontal Rule' },
-    { onClick: () => {}, title: 'Insert Table', isPopover: 'table' },
-    { onClick: onSubscript, title: 'Subscript', isActive: isSubscript },
-    { onClick: onSuperscript, title: 'Superscript', isActive: isSuperscript },
-    { onClick: onAttachment || onInsertLink, title: 'Attach/Link' },
-  ];
-
-  const [activePopover, setActivePopover] = useState<string | null>(null);
-
   return (
     <div className={cn(
       "border-t border-border/50",
       isStickyNote ? "bg-white" : "bg-muted/30"
     )}>
-      {/* Image-based toolbar with clickable regions */}
-      <div className="flex flex-col gap-1 p-2 overflow-x-auto">
-        {/* Row 1 */}
-        <div className="relative flex items-center">
-          <div className="flex items-center gap-0">
-            {row1Actions.map((action, index) => {
-              if (action.isPopover === 'textColor') {
-                return (
-                  <Popover key={index}>
-                    <PopoverTrigger asChild>
-                      <button
+      {/* Single Line Toolbar with Horizontal Scroll - Matching reference design */}
+      <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide whitespace-nowrap h-14">
+        
+        {/* Row 1: B I U A̲ S Tт 🖼 ✏ ≡ 1≡ */}
+        
+        {/* Bold - B */}
+        <ToolbarButton onClick={onBold} title="Bold (Ctrl+B)" isActive={isBold}>
+          <span className="text-xl font-black">B</span>
+        </ToolbarButton>
+        
+        {/* Italic - I */}
+        <ToolbarButton onClick={onItalic} title="Italic (Ctrl+I)" isActive={isItalic}>
+          <span className="text-xl italic font-medium">I</span>
+        </ToolbarButton>
+        
+        {/* Underline - U */}
+        <ToolbarButton onClick={onUnderline} title="Underline (Ctrl+U)" isActive={isUnderline}>
+          <span className="text-xl font-medium border-b-2 border-current pb-0.5">U</span>
+        </ToolbarButton>
+        
+        {/* Text Color - A with colored underline */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-0.5 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              title="Text Color"
+            >
+              <span className="text-xl font-bold">A</span>
+              <div className="h-1.5 w-7 rounded-sm bg-violet-600" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
+            <p className="text-xs text-muted-foreground mb-2">Text Colors</p>
+            <div className="grid grid-cols-8 gap-1">
+              {TEXT_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => onTextColor(color.value)}
+                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        
+        {/* Strikethrough - S */}
+        {onStrikethrough && (
+          <ToolbarButton onClick={onStrikethrough} title="Strikethrough" isActive={isStrikethrough}>
+            <span className="text-xl font-medium line-through">S</span>
+          </ToolbarButton>
+        )}
+        
+        {/* Font Size - Tt */}
+        {onFontSize && (
+          <Popover open={fontSizePickerOpen} onOpenChange={setFontSizePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+                title="Font Size"
+              >
+                <span className="text-xl font-bold">T</span>
+                <span className="text-sm font-medium -ml-0.5 mt-1">t</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-24 p-1 max-h-[200px] overflow-y-auto">
+              {FONT_SIZES.map((size) => (
+                <Button
+                  key={size}
+                  variant={currentFontSize === size ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-center"
+                  onClick={() => {
+                    onFontSize(size);
+                    setFontSizePickerOpen(false);
+                  }}
+                >
+                  {size}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
+        
+        {/* Image - 🖼 */}
+        {allowImages && (
+          <ToolbarButton onClick={onImageUpload} title="Insert Image">
+            <ImageIcon className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
+        {/* Highlighter - ✏ */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              title="Highlight"
+            >
+              <Highlighter className="h-7 w-7 stroke-[2] text-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
+            <p className="text-xs text-muted-foreground mb-2">Highlight Colors</p>
+            <div className="grid grid-cols-8 gap-1">
+              {HIGHLIGHT_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => onHighlight(color.value)}
+                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
+                  style={{ backgroundColor: color.value === 'transparent' ? 'white' : color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        
+        {/* Bullet List - ≡• */}
+        <ToolbarButton onClick={onBulletList} title="Bullet List" isActive={isBulletList}>
+          <List className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Numbered List - 1≡ */}
+        <ToolbarButton onClick={onNumberedList} title="Numbered List" isActive={isNumberedList}>
+          <ListOrdered className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        <ToolbarSeparator />
+        
+        {/* Row 2: ≡ ≡ ≡ ≡ ↩ ↪ — ⊞ X₂ X² 📎 */}
+        
+        {/* Align Left */}
+        <ToolbarButton onClick={onAlignLeft} title="Align Left" isActive={alignment === 'left'}>
+          <AlignLeft className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Center */}
+        <ToolbarButton onClick={onAlignCenter} title="Align Center" isActive={alignment === 'center'}>
+          <AlignCenter className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Right */}
+        <ToolbarButton onClick={onAlignRight} title="Align Right" isActive={alignment === 'right'}>
+          <AlignRight className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Align Justify */}
+        <ToolbarButton onClick={onAlignJustify} title="Justify" isActive={alignment === 'justify'}>
+          <AlignJustify className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Undo */}
+        <ToolbarButton onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+          <Undo className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Redo */}
+        <ToolbarButton onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+          <Redo className="h-7 w-7 stroke-[2] text-foreground" />
+        </ToolbarButton>
+        
+        {/* Horizontal Rule */}
+        {onHorizontalRule && (
+          <ToolbarButton onClick={onHorizontalRule} title="Insert Horizontal Rule">
+            <Minus className="h-7 w-7 stroke-[3] text-foreground" />
+          </ToolbarButton>
+        )}
+        
+        {/* Table */}
+        {showTable && (
+          <Popover open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
+                title="Insert Table"
+              >
+                <Table className="h-7 w-7 stroke-[2] text-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-4" align="start">
+              <div className="space-y-4">
+                <div className="font-medium text-sm">Insert Table</div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Rows</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => setTableRows(Math.max(1, tableRows - 1))}
+                      >
+                        <Minus className="h-4 w-4 stroke-[3]" />
+                      </Button>
+                      <span className="w-8 text-center text-sm font-bold">{tableRows}</span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => setTableRows(Math.min(20, tableRows + 1))}
+                      >
+                        <Plus className="h-4 w-4 stroke-[3]" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Columns</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => setTableCols(Math.max(1, tableCols - 1))}
+                      >
+                        <Minus className="h-4 w-4 stroke-[3]" />
+                      </Button>
+                      <span className="w-8 text-center text-sm font-bold">{tableCols}</span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => setTableCols(Math.min(10, tableCols + 1))}
+                      >
+                        <Plus className="h-4 w-4 stroke-[3]" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Style Selection */}
+                <div className="space-y-2">
+                  <span className="text-sm">Style</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    {TABLE_STYLE_OPTIONS.map((style) => (
+                      <Button
+                        key={style.id}
+                        variant={tableStyle === style.id ? "secondary" : "ghost"}
+                        size="sm"
                         className={cn(
-                          "h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted",
-                          action.isActive && "bg-primary/10 ring-2 ring-primary"
+                          "h-8 text-xs justify-start",
+                          tableStyle === style.id && "ring-1 ring-primary"
                         )}
-                        title={action.title}
+                        onClick={() => setTableStyle(style.id)}
                       >
-                        <div className="flex flex-col items-center">
-                          <span className="text-xl font-bold text-foreground">A</span>
-                          <div className="h-1 w-6 rounded-sm bg-violet-600" />
-                        </div>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-                      <p className="text-xs text-muted-foreground mb-2">Text Colors</p>
-                      <div className="grid grid-cols-8 gap-1">
-                        {TEXT_COLORS.map((color) => (
-                          <button
-                            key={color.value}
-                            type="button"
-                            onClick={() => onTextColor(color.value)}
-                            className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                            style={{ backgroundColor: color.value }}
-                            title={color.name}
-                          />
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                );
-              }
-              if (action.isPopover === 'fontSize') {
-                return (
-                  <Popover key={index} open={fontSizePickerOpen} onOpenChange={setFontSizePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className="h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted"
-                        title={action.title}
-                      >
-                        <span className="text-xl font-bold text-foreground">T</span>
-                        <span className="text-sm font-medium text-foreground -ml-0.5 mt-1">t</span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-24 p-1 max-h-[200px] overflow-y-auto">
-                      {FONT_SIZES.map((size) => (
-                        <Button
-                          key={size}
-                          variant={currentFontSize === size ? "secondary" : "ghost"}
-                          size="sm"
-                          className="w-full justify-center"
-                          onClick={() => {
-                            onFontSize?.(size);
-                            setFontSizePickerOpen(false);
-                          }}
-                        >
-                          {size}
-                        </Button>
-                      ))}
-                    </PopoverContent>
-                  </Popover>
-                );
-              }
-              if (action.isPopover === 'highlight') {
-                return (
-                  <Popover key={index}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className="h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted"
-                        title={action.title}
-                      >
-                        <Highlighter className="h-6 w-6 stroke-[2] text-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-                      <p className="text-xs text-muted-foreground mb-2">Highlight Colors</p>
-                      <div className="grid grid-cols-8 gap-1">
-                        {HIGHLIGHT_COLORS.map((color) => (
-                          <button
-                            key={color.value}
-                            type="button"
-                            onClick={() => onHighlight(color.value)}
-                            className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                            style={{ backgroundColor: color.value === 'transparent' ? 'white' : color.value }}
-                            title={color.name}
-                          />
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                );
-              }
-              
-              // Skip if action is not enabled
-              if (action.enabled === false) return null;
-              if (!action.onClick) return null;
+                        {style.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
-              const IconComponent = index === 0 ? () => <span className="text-xl font-black text-foreground">B</span> :
-                                   index === 1 ? () => <span className="text-xl italic font-medium text-foreground">I</span> :
-                                   index === 2 ? () => <span className="text-xl font-medium text-foreground border-b-2 border-foreground pb-0.5">U</span> :
-                                   index === 4 ? () => <span className="text-xl font-medium text-foreground line-through">S</span> :
-                                   index === 6 ? () => <ImageIcon className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 8 ? () => <List className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 9 ? () => <ListOrdered className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   () => null;
-
-              return (
-                <button
-                  key={index}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={cn(
-                    "h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted",
-                    action.isActive && "bg-primary/10 ring-2 ring-primary",
-                    action.disabled && "opacity-40 cursor-not-allowed"
+                {/* Grid preview */}
+                <div className="border rounded p-2 bg-muted/30">
+                  <div 
+                    className="grid gap-0.5"
+                    style={{ 
+                      gridTemplateColumns: `repeat(${Math.min(tableCols, 6)}, 1fr)`,
+                    }}
+                  >
+                    {Array.from({ length: Math.min(tableRows, 5) * Math.min(tableCols, 6) }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square bg-primary/20 rounded-sm min-w-[12px]"
+                      />
+                    ))}
+                  </div>
+                  {(tableRows > 5 || tableCols > 6) && (
+                    <p className="text-xs text-muted-foreground mt-1 text-center">
+                      {tableRows}×{tableCols} table
+                    </p>
                   )}
-                  title={action.title}
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    onTableInsert(tableRows, tableCols, tableStyle);
+                    setTablePickerOpen(false);
+                  }} 
+                  className="w-full" 
+                  size="sm"
                 >
-                  <IconComponent />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Row 2 */}
-        <div className="relative flex items-center">
-          <div className="flex items-center gap-0">
-            {row2Actions.map((action, index) => {
-              if (action.isPopover === 'table' && showTable) {
-                return (
-                  <Popover key={index} open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className="h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted"
-                        title={action.title}
-                      >
-                        <Table className="h-6 w-6 stroke-[2] text-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-4" align="start">
-                      <div className="space-y-4">
-                        <div className="font-medium text-sm">Insert Table</div>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Rows</span>
-                            <div className="flex items-center gap-2">
-                              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setTableRows(Math.max(1, tableRows - 1))}>
-                                <Minus className="h-4 w-4 stroke-[3]" />
-                              </Button>
-                              <span className="w-8 text-center text-sm font-bold">{tableRows}</span>
-                              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setTableRows(Math.min(20, tableRows + 1))}>
-                                <Plus className="h-4 w-4 stroke-[3]" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Columns</span>
-                            <div className="flex items-center gap-2">
-                              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setTableCols(Math.max(1, tableCols - 1))}>
-                                <Minus className="h-4 w-4 stroke-[3]" />
-                              </Button>
-                              <span className="w-8 text-center text-sm font-bold">{tableCols}</span>
-                              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setTableCols(Math.min(10, tableCols + 1))}>
-                                <Plus className="h-4 w-4 stroke-[3]" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <span className="text-sm">Style</span>
-                          <div className="grid grid-cols-2 gap-1">
-                            {TABLE_STYLE_OPTIONS.map((style) => (
-                              <Button
-                                key={style.id}
-                                variant={tableStyle === style.id ? "secondary" : "ghost"}
-                                size="sm"
-                                className={cn("h-8 text-xs justify-start", tableStyle === style.id && "ring-1 ring-primary")}
-                                onClick={() => setTableStyle(style.id)}
-                              >
-                                {style.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="border rounded p-2 bg-muted/30">
-                          <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.min(tableCols, 6)}, 1fr)` }}>
-                            {Array.from({ length: Math.min(tableRows, 5) * Math.min(tableCols, 6) }).map((_, i) => (
-                              <div key={i} className="aspect-square bg-primary/20 rounded-sm min-w-[12px]" />
-                            ))}
-                          </div>
-                        </div>
-                        <Button onClick={() => { onTableInsert(tableRows, tableCols, tableStyle); setTablePickerOpen(false); }} className="w-full" size="sm">
-                          Insert Table
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                );
-              }
-
-              if (!action.onClick) return null;
-
-              const IconComponent = index === 0 ? () => <AlignLeft className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 1 ? () => <AlignCenter className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 2 ? () => <AlignRight className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 3 ? () => <AlignJustify className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 4 ? () => <Undo className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 5 ? () => <Redo className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   index === 6 ? () => <Minus className="h-6 w-6 stroke-[3] text-foreground" /> :
-                                   index === 8 ? () => <span className="flex items-end"><span className="text-lg font-medium text-foreground">X</span><span className="text-xs font-medium text-foreground -mb-0.5">2</span></span> :
-                                   index === 9 ? () => <span className="flex items-start"><span className="text-lg font-medium text-foreground">X</span><span className="text-xs font-medium text-foreground -mt-1">2</span></span> :
-                                   index === 10 ? () => <Paperclip className="h-6 w-6 stroke-[2] text-foreground" /> :
-                                   () => null;
-
-              return (
-                <button
-                  key={index}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={cn(
-                    "h-12 w-12 flex items-center justify-center rounded-lg transition-all hover:bg-muted/60 active:bg-muted",
-                    action.isActive && "bg-primary/10 ring-2 ring-primary",
-                    action.disabled && "opacity-40 cursor-not-allowed"
-                  )}
-                  title={action.title}
-                >
-                  <IconComponent />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  Insert {tableStyle.charAt(0).toUpperCase() + tableStyle.slice(1)} Table
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+        
+        {/* Subscript - X₂ */}
+        {onSubscript && (
+          <ToolbarButton onClick={onSubscript} title="Subscript" isActive={isSubscript}>
+            <span className="flex items-end">
+              <span className="text-lg font-medium">X</span>
+              <span className="text-xs font-medium -mb-0.5">2</span>
+            </span>
+          </ToolbarButton>
+        )}
+        
+        {/* Superscript - X² */}
+        {onSuperscript && (
+          <ToolbarButton onClick={onSuperscript} title="Superscript" isActive={isSuperscript}>
+            <span className="flex items-start">
+              <span className="text-lg font-medium">X</span>
+              <span className="text-xs font-medium -mt-1">2</span>
+            </span>
+          </ToolbarButton>
+        )}
+        
+        {/* Attachment/Link - 📎 */}
+        {onAttachment && (
+          <ToolbarButton onClick={onAttachment} title="Attach File">
+            <Paperclip className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
+        
+        {onInsertLink && (
+          <ToolbarButton onClick={onInsertLink} title="Insert Link">
+            <LinkIcon className="h-7 w-7 stroke-[2] text-foreground" />
+          </ToolbarButton>
+        )}
         
         <ToolbarSeparator />
         
