@@ -185,7 +185,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
     };
     
     const audioPlayerHtml = `
-      <div class="voice-recording-inline" data-voice-id="${newRecording.id}" data-duration="${duration}" contenteditable="false">
+      <div class="voice-recording-inline" data-voice-id="${newRecording.id}" data-duration="${duration}" data-speed="1" contenteditable="false">
         <audio src="${audioUrl}" data-duration="${duration}"></audio>
         <button class="voice-play-btn" type="button" aria-label="Play/Pause">
           <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -200,6 +200,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
           </div>
         </div>
         <span class="voice-duration">${formatDuration(duration)}</span>
+        <button class="voice-speed-btn" type="button" aria-label="Playback speed">1x</button>
         <button class="voice-delete-btn" type="button" aria-label="Delete">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
         </button>
