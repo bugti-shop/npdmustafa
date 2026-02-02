@@ -16,6 +16,7 @@ function Calendar({ className, classNames, showOutsideDays = true, showWeekNumbe
       showOutsideDays={showOutsideDays}
       showWeekNumber={showWeekNumbers}
       className={cn("p-3 pointer-events-auto", className)}
+      style={{ fontFamily: "'Outfit', sans-serif" }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
