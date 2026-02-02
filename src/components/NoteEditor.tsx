@@ -959,7 +959,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                   <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card z-50">
+              <DropdownMenuContent align="end" className="w-56 bg-card z-50 max-h-[70vh] overflow-y-auto">
                 {/* Global Font Size Control */}
                 {['sticky', 'lined', 'regular'].includes(noteType) && (
                   <>
