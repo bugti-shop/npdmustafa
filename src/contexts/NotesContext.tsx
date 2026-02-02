@@ -9,6 +9,7 @@ export interface NoteMeta {
   type: Note['type'];
   title: string;
   color?: Note['color'];
+  customColor?: string;
   folderId?: string;
   isPinned?: boolean;
   isFavorite?: boolean;
@@ -36,6 +37,7 @@ const extractNoteMeta = (note: Note): NoteMeta => ({
   type: note.type,
   title: note.title,
   color: note.color,
+  customColor: note.customColor,
   folderId: note.folderId,
   isPinned: note.isPinned,
   isFavorite: note.isFavorite,
