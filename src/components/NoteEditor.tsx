@@ -191,11 +191,11 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
           <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
         </button>
-        <div class="voice-waveform">
-          <div class="waveform-progress" style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; overflow: hidden; display: flex; align-items: center;">
+        <div class="voice-waveform voice-seek-area" role="slider" aria-label="Seek audio" tabindex="0">
+          <div class="waveform-progress" style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; overflow: hidden; display: flex; align-items: center; pointer-events: none;">
             ${generateWaveformDots().replace(/hsl\(var\(--muted-foreground\) \/ 0\.4\)/g, 'hsl(var(--primary))')}
           </div>
-          <div class="waveform-background" style="display: flex; align-items: center;">
+          <div class="waveform-background" style="display: flex; align-items: center; pointer-events: none;">
             ${generateWaveformDots()}
           </div>
         </div>
