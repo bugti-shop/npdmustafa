@@ -13,6 +13,7 @@ interface VoiceRecordingSheetProps {
 export const VoiceRecordingSheet = ({ isOpen, onClose, onRecordingComplete }: VoiceRecordingSheetProps) => {
   const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   
@@ -50,8 +51,49 @@ export const VoiceRecordingSheet = ({ isOpen, onClose, onRecordingComplete }: Vo
       audioContextRef.current.close();
     }
     setIsRecording(false);
+    setIsPaused(false);
     setRecordingTime(0);
     setWaveformData([]);
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      mediaRecorderRef.current.pause();
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      setIsPaused(true);
+      triggerHaptic();
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && isRecording && isPaused) {
+      mediaRecorderRef.current.resume();
+      
+      // Resume timer
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Resume waveform
+      const updateWaveform = () => {
+        if (analyserRef.current) {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const samples: number[] = [];
+          for (let i = 0; i < 50; i++) {
+            const index = Math.floor(i * dataArray.length / 50);
+            samples.push(dataArray[index] / 255);
+          }
+          setWaveformData(samples);
+        }
+        animationRef.current = requestAnimationFrame(updateWaveform);
+      };
+      updateWaveform();
+      
+      setIsPaused(false);
+      triggerHaptic();
+    }
   };
 
   const startRecording = async () => {
@@ -194,25 +236,36 @@ export const VoiceRecordingSheet = ({ isOpen, onClose, onRecordingComplete }: Vo
               </span>
             </button>
             
-            {/* Record/Pause Button */}
+            {/* Record/Pause/Resume Button */}
             <button
-              onClick={isRecording ? undefined : startRecording}
+              onClick={() => {
+                if (!isRecording) {
+                  startRecording();
+                } else if (isPaused) {
+                  resumeRecording();
+                } else {
+                  pauseRecording();
+                }
+              }}
               className="flex flex-col items-center gap-2"
             >
               <div className={cn(
                 "w-16 h-16 rounded-full flex items-center justify-center transition-all",
-                isRecording 
-                  ? "bg-primary" 
-                  : "bg-primary"
+                isPaused ? "bg-primary/80" : "bg-primary"
               )}>
-                {isRecording ? (
+                {isRecording && !isPaused ? (
                   <Pause className="w-7 h-7 text-primary-foreground" />
                 ) : (
                   <Mic className="w-7 h-7 text-primary-foreground" />
                 )}
               </div>
               <span className="text-sm text-muted-foreground">
-                {isRecording ? t('voice.recording', 'Recording') : t('voice.record', 'Record')}
+                {!isRecording 
+                  ? t('voice.record', 'Record')
+                  : isPaused 
+                    ? t('voice.resume', 'Resume')
+                    : t('voice.pause', 'Pause')
+                }
               </span>
             </button>
             
