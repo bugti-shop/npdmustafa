@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, startTransition } from "react";
+import { useEffect, useState, lazy, Suspense, startTransition } from "react";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,6 +21,8 @@ import { notificationManager } from "@/utils/notifications";
 import { persistentNotificationManager } from "@/utils/persistentNotification";
 import { widgetDataSync } from "@/utils/widgetDataSync";
 import { getSetting, setSetting } from "@/utils/settingsStorage";
+import { shouldAppBeLocked, updateLastUnlockTime } from "@/utils/appLockStorage";
+import { AppLockScreen } from "@/components/AppLockScreen";
 import Index from "./pages/Index";
 
 // Lazy load most page components for faster navigation, but keep the initial screen eager
@@ -143,6 +145,7 @@ const AppRoutes = () => {
 
 const AppContent = () => {
   const { hasSeenWelcome, completeWelcome } = useWelcome();
+  const [isAppLocked, setIsAppLocked] = useState<boolean | null>(null);
   
   // Initialize keyboard height detection for mobile toolbar positioning
   useKeyboardHeight();
@@ -151,10 +154,40 @@ const AppContent = () => {
     notificationManager.initialize().catch(console.error);
     persistentNotificationManager.initialize().catch(console.error);
     widgetDataSync.initialize().catch(console.error);
+    
+    // Check app lock status
+    const checkLock = async () => {
+      const locked = await shouldAppBeLocked();
+      setIsAppLocked(locked);
+    };
+    checkLock();
+    
+    // Also check on visibility change (app comes back to foreground)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  // Handle unlock
+  const handleUnlock = async () => {
+    await updateLastUnlockTime();
+    setIsAppLocked(false);
+  };
 
   if (!hasSeenWelcome) {
     return <OnboardingFlow onComplete={completeWelcome} />;
+  }
+
+  // Show lock screen if locked (but not while checking)
+  if (isAppLocked === true) {
+    return <AppLockScreen onUnlock={handleUnlock} />;
   }
 
   return (
