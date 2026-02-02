@@ -1935,22 +1935,29 @@ const Today = () => {
                 );
                 
                 // Get destination section tasks (excluding the moved task)
-                const destTasks = uncompletedList.filter(item => 
+                const destTasksRaw = uncompletedList.filter(item => 
                   item.id !== taskId &&
                   (item.sectionId === destSectionId || (!item.sectionId && destSectionId === sections[0]?.id))
                 );
                 
-                // Remove task from source and insert at destination index
+                // Apply current saved order first, then reorder
+                const currentlyOrderedDestTasks = applyTaskOrder(destTasksRaw, `kanban-${destSectionId}`);
+                const currentDestOrderIds = currentlyOrderedDestTasks.map(t => t.id);
+                currentDestOrderIds.splice(destIndex, 0, taskId);
+                
+                // Persist the new order for destination section
+                updateSectionOrder(`kanban-${destSectionId}`, currentDestOrderIds);
+                
+                // Build destTasks for array reconstruction
+                const destTasks = [...currentlyOrderedDestTasks];
                 const updatedTask = { ...taskToMove, sectionId: destSectionId };
                 destTasks.splice(destIndex, 0, updatedTask);
                 
-                // Persist the new order for destination section
-                updateSectionOrder(`kanban-${destSectionId}`, destTasks.map(t => t.id));
-                
                 // If moving between sections, also update source section order
                 if (sourceSectionId !== destSectionId) {
-                  const remainingSourceTasks = sourceTasks.filter(t => t.id !== taskId);
-                  updateSectionOrder(`kanban-${sourceSectionId}`, remainingSourceTasks.map(t => t.id));
+                  const currentlyOrderedSourceTasks = applyTaskOrder(sourceTasks, `kanban-${sourceSectionId}`);
+                  const sourceOrderIds = currentlyOrderedSourceTasks.map(t => t.id).filter(id => id !== taskId);
+                  updateSectionOrder(`kanban-${sourceSectionId}`, sourceOrderIds);
                 }
                 
                 // Build new items array preserving order
@@ -2160,9 +2167,15 @@ const Today = () => {
                 return destGroupId === `status-${itemStatus}` || 
                        (destGroupId === 'status-completed' && item.completed);
               });
-              const reorderedIds = destTasks.map(t => t.id).filter(id => id !== taskId);
-              reorderedIds.splice(destIndex, 0, taskId);
-              updateSectionOrder(destGroupId, reorderedIds);
+              // Apply current saved order first
+              const currentlyOrderedTasks = applyTaskOrder(destTasks, destGroupId);
+              const currentOrderIds = currentlyOrderedTasks.map(t => t.id);
+              const taskCurrentIndex = currentOrderIds.indexOf(taskId);
+              if (taskCurrentIndex !== -1) {
+                currentOrderIds.splice(taskCurrentIndex, 1);
+              }
+              currentOrderIds.splice(destIndex, 0, taskId);
+              updateSectionOrder(destGroupId, currentOrderIds);
               setOrderVersion(v => v + 1);
             }}>
               <div className="overflow-x-auto pb-4 -mx-4 px-4">
@@ -2316,9 +2329,15 @@ const Today = () => {
                 if (destGroup === 'timeline-nodate') return !itemDate;
                 return false;
               });
-              const reorderedIds = destGroupTasks.map(t => t.id).filter(id => id !== taskId);
-              reorderedIds.splice(destIndex, 0, taskId);
-              updateSectionOrder(destGroup, reorderedIds);
+              // Apply current saved order first
+              const currentlyOrderedTasks = applyTaskOrder(destGroupTasks, destGroup);
+              const currentOrderIds = currentlyOrderedTasks.map(t => t.id);
+              const taskCurrentIndex = currentOrderIds.indexOf(taskId);
+              if (taskCurrentIndex !== -1) {
+                currentOrderIds.splice(taskCurrentIndex, 1);
+              }
+              currentOrderIds.splice(destIndex, 0, taskId);
+              updateSectionOrder(destGroup, currentOrderIds);
               
               // Force re-render to apply the new order immediately
               setOrderVersion(v => v + 1);
@@ -2407,9 +2426,15 @@ const Today = () => {
                 if (destGroup === 'progress-almostdone') return hasSubtasks && completionPercent >= 0.75 && completedSubtasks < totalSubtasks;
                 return false;
               });
-              const reorderedIds = destGroupTasks.map(t => t.id).filter(id => id !== taskId);
-              reorderedIds.splice(destIndex, 0, taskId);
-              updateSectionOrder(destGroup, reorderedIds);
+              // Apply current saved order first
+              const currentlyOrderedTasks = applyTaskOrder(destGroupTasks, destGroup);
+              const currentOrderIds = currentlyOrderedTasks.map(t => t.id);
+              const taskCurrentIndex = currentOrderIds.indexOf(taskId);
+              if (taskCurrentIndex !== -1) {
+                currentOrderIds.splice(taskCurrentIndex, 1);
+              }
+              currentOrderIds.splice(destIndex, 0, taskId);
+              updateSectionOrder(destGroup, currentOrderIds);
               
               // Force re-render to apply the new order immediately
               setOrderVersion(v => v + 1);
@@ -2508,9 +2533,15 @@ const Today = () => {
                 if (destGroup === 'priority-none') return !item.priority || item.priority === 'none';
                 return false;
               });
-              const reorderedIds = destGroupTasks.map(t => t.id).filter(id => id !== taskId);
-              reorderedIds.splice(destIndex, 0, taskId);
-              updateSectionOrder(destGroup, reorderedIds);
+              // Apply current saved order first
+              const currentlyOrderedTasks = applyTaskOrder(destGroupTasks, destGroup);
+              const currentOrderIds = currentlyOrderedTasks.map(t => t.id);
+              const taskCurrentIndex = currentOrderIds.indexOf(taskId);
+              if (taskCurrentIndex !== -1) {
+                currentOrderIds.splice(taskCurrentIndex, 1);
+              }
+              currentOrderIds.splice(destIndex, 0, taskId);
+              updateSectionOrder(destGroup, currentOrderIds);
               
               // Force re-render to apply the new order immediately
               setOrderVersion(v => v + 1);
@@ -2797,9 +2828,18 @@ const Today = () => {
                 const itemSectionId = item.sectionId || 'default';
                 return itemSectionId === destSectionId;
               });
-              const reorderedIds = destSectionTasks.map(t => t.id).filter(id => id !== taskId);
-              reorderedIds.splice(destIndex, 0, taskId);
-              updateSectionOrder(`flat-section-${destSectionId}`, reorderedIds);
+              // Apply current saved order first, then reorder
+              const currentlyOrderedTasks = applyTaskOrder(destSectionTasks, `flat-section-${destSectionId}`);
+              const currentOrderIds = currentlyOrderedTasks.map(t => t.id);
+              
+              // Remove the task from its current position and insert at new position
+              const taskCurrentIndex = currentOrderIds.indexOf(taskId);
+              if (taskCurrentIndex !== -1) {
+                currentOrderIds.splice(taskCurrentIndex, 1);
+              }
+              currentOrderIds.splice(destIndex, 0, taskId);
+              
+              updateSectionOrder(`flat-section-${destSectionId}`, currentOrderIds);
               
               // Force re-render to apply the new order immediately
               setOrderVersion(v => v + 1);
