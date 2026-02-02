@@ -239,7 +239,7 @@ export const WordToolbar = ({
       disabled={disabled}
       title={title}
       className={cn(
-        "h-9 w-9 flex items-center justify-center rounded transition-colors flex-shrink-0",
+        "h-11 w-11 flex items-center justify-center rounded transition-colors flex-shrink-0",
         "hover:bg-muted/80 active:bg-muted",
         active && "bg-primary/10 text-primary",
         disabled && "opacity-40 pointer-events-none"
@@ -250,21 +250,21 @@ export const WordToolbar = ({
   );
 
   // Thin separator
-  const Sep = () => <div className="w-px h-5 bg-border/50 mx-0.5 flex-shrink-0" />;
+  const Sep = () => <div className="w-px h-7 bg-border/50 mx-0.5 flex-shrink-0" />;
 
   return (
     <div className={cn(
       "border-t border-border/40",
       isStickyNote ? "bg-background" : "bg-muted/20"
     )}>
-      <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide h-10">
+      <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide h-12">
         
         {/* Undo / Redo */}
         <IconBtn onClick={onUndo} disabled={!canUndo} title="Undo">
-          <Undo className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          <Undo className="h-5 w-5" strokeWidth={1.5} />
         </IconBtn>
         <IconBtn onClick={onRedo} disabled={!canRedo} title="Redo">
-          <Redo className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          <Redo className="h-5 w-5" strokeWidth={1.5} />
         </IconBtn>
 
         <Sep />
@@ -276,10 +276,10 @@ export const WordToolbar = ({
               <button
                 type="button"
                 title="Font Size"
-                className="h-9 px-2 flex items-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0 text-sm font-medium"
+                className="h-11 px-2.5 flex items-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0 text-sm font-medium"
               >
                 {currentFontSize}
-                <ChevronDown className="h-3 w-3 opacity-60" />
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-20 p-1" align="start">
@@ -309,9 +309,9 @@ export const WordToolbar = ({
               <button
                 type="button"
                 title="Font"
-                className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+                className="h-11 w-11 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
               >
-                <Type className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <Type className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-40 p-1" align="start">
@@ -337,17 +337,17 @@ export const WordToolbar = ({
 
         {/* Text Formatting: B I U S */}
         <IconBtn onClick={onBold} title="Bold" active={isBold}>
-          <Bold className="h-[18px] w-[18px]" strokeWidth={isBold ? 2.5 : 1.5} />
+          <Bold className="h-5 w-5" strokeWidth={isBold ? 2.5 : 1.5} />
         </IconBtn>
         <IconBtn onClick={onItalic} title="Italic" active={isItalic}>
-          <Italic className="h-[18px] w-[18px]" strokeWidth={isItalic ? 2.5 : 1.5} />
+          <Italic className="h-5 w-5" strokeWidth={isItalic ? 2.5 : 1.5} />
         </IconBtn>
         <IconBtn onClick={onUnderline} title="Underline" active={isUnderline}>
-          <UnderlineIcon className="h-[18px] w-[18px]" strokeWidth={isUnderline ? 2.5 : 1.5} />
+          <UnderlineIcon className="h-5 w-5" strokeWidth={isUnderline ? 2.5 : 1.5} />
         </IconBtn>
         {onStrikethrough && (
           <IconBtn onClick={onStrikethrough} title="Strikethrough" active={isStrikethrough}>
-            <Strikethrough className="h-[18px] w-[18px]" strokeWidth={isStrikethrough ? 2.5 : 1.5} />
+            <Strikethrough className="h-5 w-5" strokeWidth={isStrikethrough ? 2.5 : 1.5} />
           </IconBtn>
         )}
 
@@ -359,10 +359,10 @@ export const WordToolbar = ({
             <button
               type="button"
               title="Text Color"
-              className="h-9 w-9 flex flex-col items-center justify-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+              className="h-11 w-11 flex flex-col items-center justify-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              <span className="text-sm font-bold leading-none">A</span>
-              <div className="h-1 w-4 rounded-full" style={{ backgroundColor: selectedTextColor }} />
+              <span className="text-base font-bold leading-none">A</span>
+              <div className="h-1.5 w-5 rounded-full" style={{ backgroundColor: selectedTextColor }} />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2" align="start">
@@ -389,9 +389,9 @@ export const WordToolbar = ({
             <button
               type="button"
               title="Highlight"
-              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+              className="h-11 w-11 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              <Highlighter className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              <Highlighter className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2" align="start">
@@ -417,14 +417,14 @@ export const WordToolbar = ({
 
         {/* Lists */}
         <IconBtn onClick={onBulletList} title="Bullet List" active={isBulletList}>
-          <List className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          <List className="h-5 w-5" strokeWidth={1.5} />
         </IconBtn>
         <IconBtn onClick={onNumberedList} title="Numbered List" active={isNumberedList}>
-          <ListOrdered className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          <ListOrdered className="h-5 w-5" strokeWidth={1.5} />
         </IconBtn>
         {onChecklist && (
           <IconBtn onClick={onChecklist} title="Checklist" active={isChecklist}>
-            <CheckSquare className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <CheckSquare className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
@@ -436,27 +436,27 @@ export const WordToolbar = ({
             <button
               type="button"
               title="Alignment"
-              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+              className="h-11 w-11 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              {alignment === 'left' && <AlignLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />}
-              {alignment === 'center' && <AlignCenter className="h-[18px] w-[18px]" strokeWidth={1.5} />}
-              {alignment === 'right' && <AlignRight className="h-[18px] w-[18px]" strokeWidth={1.5} />}
-              {alignment === 'justify' && <AlignJustify className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+              {alignment === 'left' && <AlignLeft className="h-5 w-5" strokeWidth={1.5} />}
+              {alignment === 'center' && <AlignCenter className="h-5 w-5" strokeWidth={1.5} />}
+              {alignment === 'right' && <AlignRight className="h-5 w-5" strokeWidth={1.5} />}
+              {alignment === 'justify' && <AlignJustify className="h-5 w-5" strokeWidth={1.5} />}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-1" align="start">
             <div className="flex gap-0.5">
               <IconBtn onClick={() => { onAlignLeft(); setAlignOpen(false); }} title="Left" active={alignment === 'left'}>
-                <AlignLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <AlignLeft className="h-5 w-5" strokeWidth={1.5} />
               </IconBtn>
               <IconBtn onClick={() => { onAlignCenter(); setAlignOpen(false); }} title="Center" active={alignment === 'center'}>
-                <AlignCenter className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <AlignCenter className="h-5 w-5" strokeWidth={1.5} />
               </IconBtn>
               <IconBtn onClick={() => { onAlignRight(); setAlignOpen(false); }} title="Right" active={alignment === 'right'}>
-                <AlignRight className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <AlignRight className="h-5 w-5" strokeWidth={1.5} />
               </IconBtn>
               <IconBtn onClick={() => { onAlignJustify(); setAlignOpen(false); }} title="Justify" active={alignment === 'justify'}>
-                <AlignJustify className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <AlignJustify className="h-5 w-5" strokeWidth={1.5} />
               </IconBtn>
             </div>
           </PopoverContent>
@@ -465,12 +465,12 @@ export const WordToolbar = ({
         {/* Indent / Outdent */}
         {onOutdent && (
           <IconBtn onClick={onOutdent} title="Decrease Indent">
-            <Outdent className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Outdent className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
         {onIndent && (
           <IconBtn onClick={onIndent} title="Increase Indent">
-            <Indent className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Indent className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
@@ -483,9 +483,9 @@ export const WordToolbar = ({
               <button
                 type="button"
                 title="Insert Table"
-                className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+                className="h-11 w-11 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
               >
-                <Table className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <Table className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-48 p-3" align="start">
@@ -546,14 +546,14 @@ export const WordToolbar = ({
         {/* Image */}
         {allowImages && (
           <IconBtn onClick={onImageUpload} title="Insert Image">
-            <ImageIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
         {/* Horizontal Rule */}
         {onHorizontalRule && (
           <IconBtn onClick={onHorizontalRule} title="Horizontal Line">
-            <Minus className="h-[18px] w-[18px]" strokeWidth={2} />
+            <Minus className="h-5 w-5" strokeWidth={2} />
           </IconBtn>
         )}
 
@@ -565,9 +565,9 @@ export const WordToolbar = ({
             <button
               type="button"
               title="Headings"
-              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+              className="h-11 w-11 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              <Heading1 className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              <Heading1 className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-32 p-1" align="start">
@@ -605,19 +605,19 @@ export const WordToolbar = ({
         {/* Subscript / Superscript */}
         {onSubscript && (
           <IconBtn onClick={onSubscript} title="Subscript" active={isSubscript}>
-            <Subscript className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Subscript className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
         {onSuperscript && (
           <IconBtn onClick={onSuperscript} title="Superscript" active={isSuperscript}>
-            <Superscript className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Superscript className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
         {/* Clear Formatting */}
         {onClearFormatting && (
           <IconBtn onClick={onClearFormatting} title="Clear Formatting">
-            <RemoveFormatting className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <RemoveFormatting className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
@@ -626,21 +626,21 @@ export const WordToolbar = ({
         {/* Link */}
         {onInsertLink && (
           <IconBtn onClick={onInsertLink} title="Insert Link">
-            <LinkIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <LinkIcon className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
         {/* Note Link */}
         {onInsertNoteLink && (
           <IconBtn onClick={onInsertNoteLink} title="Link to Note">
-            <Link2 className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Link2 className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
         {/* Attachment */}
         {onAttachment && (
           <IconBtn onClick={onAttachment} title="Attach File">
-            <Paperclip className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Paperclip className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
@@ -652,7 +652,7 @@ export const WordToolbar = ({
         {/* Voice Record */}
         {onVoiceRecord && (
           <IconBtn onClick={onVoiceRecord} title="Voice Recording">
-            <Mic className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <Mic className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         )}
 
@@ -662,10 +662,10 @@ export const WordToolbar = ({
         {onTextDirection && (
           <>
             <IconBtn onClick={() => onTextDirection('ltr')} title="Left to Right" active={textDirection === 'ltr'}>
-              <PilcrowLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              <PilcrowLeft className="h-5 w-5" strokeWidth={1.5} />
             </IconBtn>
             <IconBtn onClick={() => onTextDirection('rtl')} title="Right to Left" active={textDirection === 'rtl'}>
-              <PilcrowRight className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              <PilcrowRight className="h-5 w-5" strokeWidth={1.5} />
             </IconBtn>
           </>
         )}
@@ -677,15 +677,15 @@ export const WordToolbar = ({
             disabled={zoom <= 50}
             title="Zoom Out"
           >
-            <ZoomOut className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <ZoomOut className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
-          <span className="text-xs font-medium w-10 text-center tabular-nums">{zoom}%</span>
+          <span className="text-sm font-medium w-12 text-center tabular-nums">{zoom}%</span>
           <IconBtn 
             onClick={() => onZoomChange(Math.min(200, zoom + 10))} 
             disabled={zoom >= 200}
             title="Zoom In"
           >
-            <ZoomIn className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <ZoomIn className="h-5 w-5" strokeWidth={1.5} />
           </IconBtn>
         </div>
       </div>
