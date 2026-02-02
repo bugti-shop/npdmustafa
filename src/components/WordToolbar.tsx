@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Bold,
   Italic,
@@ -15,7 +14,6 @@ import {
   Image as ImageIcon,
   List,
   ListOrdered,
-  Palette,
   Highlighter,
   Undo,
   Redo,
@@ -24,36 +22,24 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  TextCursorInput,
   Table,
-  Star,
   Paperclip,
   Heading1,
-  Heading2,
-  Heading3,
-  MessageSquare,
   Link2,
-  FileText,
-  Columns,
-  SplitSquareHorizontal,
-  Maximize,
-  Minimize,
   ZoomIn,
   ZoomOut,
   PilcrowLeft,
   PilcrowRight,
-  CaseSensitive,
-  CaseUpper,
-  CaseLower,
   Plus,
-  GripVertical,
   Mic,
+  CheckSquare,
+  ChevronDown,
+  Indent,
+  Outdent,
 } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Slider } from '@/components/ui/slider';
 
 interface WordToolbarProps {
   onUndo: () => void;
@@ -94,14 +80,12 @@ interface WordToolbarProps {
   isStickyNote?: boolean;
   allowImages?: boolean;
   showTable?: boolean;
-  // Extended features
   onComment?: () => void;
   onTextDirection?: (dir: 'ltr' | 'rtl') => void;
   textDirection?: 'ltr' | 'rtl';
   onAttachment?: () => void;
   onVoiceRecord?: () => void;
   onEmojiInsert?: (emoji: string) => void;
-  // Active states
   isBold?: boolean;
   isItalic?: boolean;
   isUnderline?: boolean;
@@ -111,9 +95,13 @@ interface WordToolbarProps {
   alignment?: 'left' | 'center' | 'right' | 'justify';
   isBulletList?: boolean;
   isNumberedList?: boolean;
+  onIndent?: () => void;
+  onOutdent?: () => void;
+  onChecklist?: () => void;
+  isChecklist?: boolean;
 }
 
-// Toolbar item types for reordering
+// Toolbar order types
 type ToolbarItemId = 
   | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'subscript' | 'superscript' 
   | 'clearFormatting' | 'codeBlock' | 'horizontalRule' | 'blockquote' | 'emoji'
@@ -121,8 +109,6 @@ type ToolbarItemId =
   | 'undo' | 'redo' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'alignJustify'
   | 'fontFamily' | 'fontSize' | 'headings' | 'textCase' | 'ltr' | 'rtl'
   | 'comment' | 'link' | 'noteLink' | 'attachment' | 'zoom';
-
-const TOOLBAR_ORDER_KEY = 'wordToolbarOrder';
 
 const DEFAULT_TOOLBAR_ORDER: ToolbarItemId[] = [
   'bold', 'italic', 'underline', 'fontFamily', 'fontSize', 'strikethrough', 'subscript', 'superscript',
@@ -133,201 +119,35 @@ const DEFAULT_TOOLBAR_ORDER: ToolbarItemId[] = [
   'comment', 'link', 'noteLink', 'attachment', 'zoom'
 ];
 
-// Note: Toolbar order is now managed via IndexedDB in ToolbarOrderManager
-// This file uses cached order that gets synced from ToolbarOrderManager
-
 let cachedToolbarOrder: ToolbarItemId[] = [...DEFAULT_TOOLBAR_ORDER];
-
-const getToolbarOrder = (): ToolbarItemId[] => {
-  return cachedToolbarOrder;
-};
-
-const saveToolbarOrder = (order: ToolbarItemId[]) => {
-  cachedToolbarOrder = order;
-  // Actual persistence handled by ToolbarOrderManager via IndexedDB
-};
 
 export const setCachedToolbarOrder = (order: ToolbarItemId[]) => {
   cachedToolbarOrder = order;
 };
 
-// 60+ text colors organized by hue
+// Compact color palette
 const TEXT_COLORS = [
-  // Grays
-  { name: 'Black', value: '#000000' },
-  { name: 'Dark Gray', value: '#1F2937' },
-  { name: 'Gray', value: '#374151' },
-  { name: 'Medium Gray', value: '#6B7280' },
-  { name: 'Light Gray', value: '#9CA3AF' },
-  { name: 'Silver', value: '#D1D5DB' },
-  { name: 'White', value: '#FFFFFF' },
-  // Reds
-  { name: 'Dark Red', value: '#7F1D1D' },
-  { name: 'Red', value: '#DC2626' },
-  { name: 'Bright Red', value: '#EF4444' },
-  { name: 'Light Red', value: '#F87171' },
-  { name: 'Rose', value: '#FB7185' },
-  { name: 'Coral', value: '#FF6B6B' },
-  // Oranges
-  { name: 'Burnt Orange', value: '#C2410C' },
-  { name: 'Dark Orange', value: '#EA580C' },
-  { name: 'Orange', value: '#F97316' },
-  { name: 'Light Orange', value: '#FB923C' },
-  { name: 'Peach', value: '#FDBA74' },
-  { name: 'Apricot', value: '#FED7AA' },
-  // Yellows
-  { name: 'Dark Yellow', value: '#A16207' },
-  { name: 'Gold', value: '#CA8A04' },
-  { name: 'Yellow', value: '#EAB308' },
-  { name: 'Bright Yellow', value: '#FACC15' },
-  { name: 'Light Yellow', value: '#FDE047' },
-  { name: 'Lemon', value: '#FEF08A' },
-  // Greens
-  { name: 'Dark Green', value: '#14532D' },
-  { name: 'Forest Green', value: '#166534' },
-  { name: 'Green', value: '#16A34A' },
-  { name: 'Emerald', value: '#10B981' },
-  { name: 'Teal', value: '#14B8A6' },
-  { name: 'Light Green', value: '#4ADE80' },
-  { name: 'Lime', value: '#84CC16' },
-  { name: 'Mint', value: '#86EFAC' },
-  // Blues
-  { name: 'Navy', value: '#1E3A8A' },
-  { name: 'Dark Blue', value: '#1D4ED8' },
-  { name: 'Blue', value: '#3B82F6' },
-  { name: 'Bright Blue', value: '#60A5FA' },
-  { name: 'Sky Blue', value: '#38BDF8' },
-  { name: 'Light Blue', value: '#7DD3FC' },
-  { name: 'Cyan', value: '#22D3EE' },
-  { name: 'Ice Blue', value: '#BAE6FD' },
-  // Purples
-  { name: 'Dark Purple', value: '#581C87' },
-  { name: 'Purple', value: '#7C3AED' },
-  { name: 'Violet', value: '#8B5CF6' },
-  { name: 'Light Purple', value: '#A78BFA' },
-  { name: 'Lavender', value: '#C4B5FD' },
-  { name: 'Indigo', value: '#6366F1' },
-  // Pinks
-  { name: 'Dark Pink', value: '#9D174D' },
-  { name: 'Magenta', value: '#DB2777' },
-  { name: 'Pink', value: '#EC4899' },
-  { name: 'Hot Pink', value: '#F472B6' },
-  { name: 'Light Pink', value: '#F9A8D4' },
-  { name: 'Blush', value: '#FBCFE8' },
-  // Browns
-  { name: 'Dark Brown', value: '#422006' },
-  { name: 'Brown', value: '#78350F' },
-  { name: 'Chocolate', value: '#92400E' },
-  { name: 'Caramel', value: '#B45309' },
-  { name: 'Tan', value: '#D97706' },
-  { name: 'Beige', value: '#FDE68A' },
+  '#000000', '#374151', '#6B7280', '#9CA3AF',
+  '#DC2626', '#EA580C', '#CA8A04', '#16A34A',
+  '#0EA5E9', '#3B82F6', '#8B5CF6', '#EC4899',
 ];
 
-// 60+ highlight colors organized by hue
 const HIGHLIGHT_COLORS = [
-  { name: 'None', value: 'transparent' },
-  // Light Yellows
-  { name: 'Light Yellow', value: '#FEF08A' },
-  { name: 'Pale Yellow', value: '#FEF9C3' },
-  { name: 'Cream', value: '#FFFBEB' },
-  { name: 'Butter', value: '#FDE68A' },
-  { name: 'Gold Highlight', value: '#FCD34D' },
-  { name: 'Honey', value: '#FBBF24' },
-  // Light Oranges
-  { name: 'Light Orange', value: '#FED7AA' },
-  { name: 'Peach', value: '#FFEDD5' },
-  { name: 'Coral Light', value: '#FED7E2' },
-  { name: 'Salmon', value: '#FECACA' },
-  { name: 'Apricot', value: '#FDBA74' },
-  { name: 'Melon', value: '#FB923C' },
-  // Light Reds/Pinks
-  { name: 'Light Pink', value: '#FBCFE8' },
-  { name: 'Rose', value: '#FECDD3' },
-  { name: 'Blush', value: '#FDF2F8' },
-  { name: 'Cotton Candy', value: '#F9A8D4' },
-  { name: 'Light Red', value: '#FECACA' },
-  { name: 'Warm Pink', value: '#FDA4AF' },
-  // Light Purples
-  { name: 'Light Purple', value: '#E9D5FF' },
-  { name: 'Lavender', value: '#F3E8FF' },
-  { name: 'Lilac', value: '#DDD6FE' },
-  { name: 'Wisteria', value: '#C4B5FD' },
-  { name: 'Orchid', value: '#D8B4FE' },
-  { name: 'Grape', value: '#A78BFA' },
-  // Light Blues
-  { name: 'Light Blue', value: '#BFDBFE' },
-  { name: 'Sky Blue', value: '#E0F2FE' },
-  { name: 'Ice Blue', value: '#F0F9FF' },
-  { name: 'Powder Blue', value: '#BAE6FD' },
-  { name: 'Azure', value: '#7DD3FC' },
-  { name: 'Cyan Light', value: '#CFFAFE' },
-  // Light Greens
-  { name: 'Light Green', value: '#BBF7D0' },
-  { name: 'Mint', value: '#D1FAE5' },
-  { name: 'Seafoam', value: '#ECFDF5' },
-  { name: 'Sage', value: '#A7F3D0' },
-  { name: 'Pistachio', value: '#86EFAC' },
-  { name: 'Spring Green', value: '#6EE7B7' },
-  // Light Teals
-  { name: 'Light Teal', value: '#99F6E4' },
-  { name: 'Aqua', value: '#CCFBF1' },
-  { name: 'Turquoise', value: '#5EEAD4' },
-  { name: 'Sea Glass', value: '#2DD4BF' },
-  { name: 'Pool', value: '#A5F3FC' },
-  { name: 'Ocean', value: '#67E8F9' },
-  // Grays
-  { name: 'Light Gray', value: '#E5E7EB' },
-  { name: 'Silver', value: '#F3F4F6' },
-  { name: 'Platinum', value: '#F9FAFB' },
-  { name: 'Smoke', value: '#D1D5DB' },
-  { name: 'Ash', value: '#9CA3AF' },
-  { name: 'Slate', value: '#CBD5E1' },
-  // Earthy Tones
-  { name: 'Beige', value: '#FEF3C7' },
-  { name: 'Sand', value: '#FDE68A' },
-  { name: 'Wheat', value: '#F5DEB3' },
-  { name: 'Linen', value: '#FAF0E6' },
-  { name: 'Ivory', value: '#FFFFF0' },
-  { name: 'Tan Light', value: '#D4A574' },
+  'transparent',
+  '#FEF08A', '#FED7AA', '#FECACA', '#FBCFE8',
+  '#E9D5FF', '#BFDBFE', '#BBF7D0', '#CFFAFE',
 ];
 
 const FONT_FAMILIES = [
   { name: 'Default', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   { name: 'Arial', value: 'Arial, sans-serif' },
-  { name: 'Times New Roman', value: '"Times New Roman", serif' },
+  { name: 'Times', value: '"Times New Roman", serif' },
   { name: 'Georgia', value: 'Georgia, serif' },
-  { name: 'Courier New', value: '"Courier New", monospace' },
+  { name: 'Courier', value: '"Courier New", monospace' },
   { name: 'Verdana', value: 'Verdana, sans-serif' },
-  { name: 'Roboto', value: '"Roboto", sans-serif' },
-  { name: 'Open Sans', value: '"Open Sans", sans-serif' },
-  // Handwriting Style Fonts
-  { name: 'Dancing Script', value: '"Dancing Script", cursive' },
-  { name: 'Pacifico', value: '"Pacifico", cursive' },
-  { name: 'Indie Flower', value: '"Indie Flower", cursive' },
-  { name: 'Shadows Into Light', value: '"Shadows Into Light", cursive' },
-  { name: 'Permanent Marker', value: '"Permanent Marker", cursive' },
-  { name: 'Caveat', value: '"Caveat", cursive' },
-  { name: 'Satisfy', value: '"Satisfy", cursive' },
-  { name: 'Kalam', value: '"Kalam", cursive' },
-  { name: 'Patrick Hand', value: '"Patrick Hand", cursive' },
-  { name: 'Architects Daughter', value: '"Architects Daughter", cursive' },
-  { name: 'Amatic SC', value: '"Amatic SC", cursive' },
-  { name: 'Gloria Hallelujah', value: '"Gloria Hallelujah", cursive' },
-  { name: 'Handlee', value: '"Handlee", cursive' },
-  { name: 'Nothing You Could Do', value: '"Nothing You Could Do", cursive' },
-  { name: 'Rock Salt', value: '"Rock Salt", cursive' },
-  { name: 'Homemade Apple', value: '"Homemade Apple", cursive' },
-  { name: 'La Belle Aurore', value: '"La Belle Aurore", cursive' },
-  { name: 'Sacramento', value: '"Sacramento", cursive' },
-  { name: 'Great Vibes', value: '"Great Vibes", cursive' },
-  { name: 'Allura', value: '"Allura", cursive' },
-  { name: 'Alex Brush', value: '"Alex Brush", cursive' },
-  { name: 'Tangerine', value: '"Tangerine", cursive' },
-  { name: 'Yellowtail', value: '"Yellowtail", cursive' },
-  { name: 'Marck Script', value: '"Marck Script", cursive' },
-  { name: 'Courgette', value: '"Courgette", cursive' },
-  { name: 'Cookie', value: '"Cookie", cursive' },
 ];
+
+const FONT_SIZES = ['10', '12', '14', '16', '18', '20', '24', '28', '32', '36', '48'];
 
 export const WordToolbar = ({
   onUndo,
@@ -382,603 +202,491 @@ export const WordToolbar = ({
   alignment = 'left',
   isBulletList = false,
   isNumberedList = false,
+  onIndent,
+  onOutdent,
+  onChecklist,
+  isChecklist = false,
 }: WordToolbarProps) => {
-  const [fontPickerOpen, setFontPickerOpen] = useState(false);
-  const [fontSizePickerOpen, setFontSizePickerOpen] = useState(false);
+  const [fontSizeOpen, setFontSizeOpen] = useState(false);
+  const [fontFamilyOpen, setFontFamilyOpen] = useState(false);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
-  const [tablePickerOpen, setTablePickerOpen] = useState(false);
-  const [tableStyle, setTableStyle] = useState<'default' | 'striped' | 'bordered' | 'minimal' | 'modern'>('default');
+  const [tableOpen, setTableOpen] = useState(false);
+  const [textColorOpen, setTextColorOpen] = useState(false);
+  const [highlightOpen, setHighlightOpen] = useState(false);
+  const [headingOpen, setHeadingOpen] = useState(false);
+  const [alignOpen, setAlignOpen] = useState(false);
+  const [selectedTextColor, setSelectedTextColor] = useState('#000000');
+  const [selectedHighlight, setSelectedHighlight] = useState('transparent');
 
-  const FONT_SIZES = [
-    '8', '9', '10', '11', '12', '14', '16', '18', '20', '24', '28', '32', '36', '48', '72'
-  ];
-
-  const TABLE_STYLE_OPTIONS = [
-    { id: 'default', name: 'Default' },
-    { id: 'striped', name: 'Striped' },
-    { id: 'bordered', name: 'Bordered' },
-    { id: 'minimal', name: 'Minimal' },
-    { id: 'modern', name: 'Modern' },
-  ] as const;
-
-  const ToolbarButton = ({ 
+  // Minimal icon button - Zoho style
+  const IconBtn = ({ 
     onClick, 
     disabled, 
     title, 
+    active = false,
     children,
-    className = '',
-    colorIndicator,
-    isActive = false,
   }: { 
     onClick?: () => void; 
     disabled?: boolean; 
     title: string; 
+    active?: boolean;
     children: React.ReactNode;
-    className?: string;
-    colorIndicator?: string;
-    isActive?: boolean;
   }) => (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      size="sm"
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        "h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-1 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0",
-        disabled && "opacity-40",
-        isActive && "bg-primary/10 text-primary",
-        className
-      )}
       title={title}
+      className={cn(
+        "h-9 w-9 flex items-center justify-center rounded transition-colors flex-shrink-0",
+        "hover:bg-muted/80 active:bg-muted",
+        active && "bg-primary/10 text-primary",
+        disabled && "opacity-40 pointer-events-none"
+      )}
     >
       {children}
-      {colorIndicator && (
-        <div 
-          className="h-1 w-7 rounded-sm" 
-          style={{ backgroundColor: colorIndicator }}
-        />
-      )}
-    </Button>
+    </button>
   );
 
-  const ToolbarSeparator = () => (
-    <div className="w-px h-7 bg-border/30 mx-2" />
-  );
+  // Thin separator
+  const Sep = () => <div className="w-px h-5 bg-border/50 mx-0.5 flex-shrink-0" />;
 
   return (
     <div className={cn(
-      "border-t border-border/50",
-      isStickyNote ? "bg-white" : "bg-muted/30"
+      "border-t border-border/40",
+      isStickyNote ? "bg-background" : "bg-muted/20"
     )}>
-      {/* Single Line Toolbar with Horizontal Scroll - Matching reference design */}
-      <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide whitespace-nowrap h-14">
+      <div className="flex items-center gap-0 px-1 overflow-x-auto scrollbar-hide h-10">
         
-        {/* Row 1: B I U A̲ S Tт 🖼 ✏ ≡ 1≡ */}
-        
-        {/* Bold - B */}
-        <ToolbarButton onClick={onBold} title="Bold (Ctrl+B)" isActive={isBold}>
-          <span className="text-xl font-black">B</span>
-        </ToolbarButton>
-        
-        {/* Italic - I */}
-        <ToolbarButton onClick={onItalic} title="Italic (Ctrl+I)" isActive={isItalic}>
-          <span className="text-xl italic font-medium">I</span>
-        </ToolbarButton>
-        
-        {/* Underline - U */}
-        <ToolbarButton onClick={onUnderline} title="Underline (Ctrl+U)" isActive={isUnderline}>
-          <span className="text-xl font-medium border-b-2 border-current pb-0.5">U</span>
-        </ToolbarButton>
-        
-        {/* Text Color - A with colored underline */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-14 min-w-[52px] p-0 flex flex-col items-center justify-center gap-0.5 rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
-              title="Text Color"
-            >
-              <span className="text-xl font-bold">A</span>
-              <div className="h-1.5 w-7 rounded-sm bg-violet-600" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-            <p className="text-xs text-muted-foreground mb-2">Text Colors</p>
-            <div className="grid grid-cols-8 gap-1">
-              {TEXT_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => onTextColor(color.value)}
-                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-        
-        {/* Strikethrough - S */}
-        {onStrikethrough && (
-          <ToolbarButton onClick={onStrikethrough} title="Strikethrough" isActive={isStrikethrough}>
-            <span className="text-xl font-medium line-through">S</span>
-          </ToolbarButton>
-        )}
-        
-        {/* Font Size - Tt */}
+        {/* Undo / Redo */}
+        <IconBtn onClick={onUndo} disabled={!canUndo} title="Undo">
+          <Undo className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        </IconBtn>
+        <IconBtn onClick={onRedo} disabled={!canRedo} title="Redo">
+          <Redo className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        </IconBtn>
+
+        <Sep />
+
+        {/* Font Size - Clean indicator like "16px" */}
         {onFontSize && (
-          <Popover open={fontSizePickerOpen} onOpenChange={setFontSizePickerOpen}>
+          <Popover open={fontSizeOpen} onOpenChange={setFontSizeOpen}>
             <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              <button
+                type="button"
                 title="Font Size"
+                className="h-9 px-2 flex items-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0 text-sm font-medium"
               >
-                <span className="text-xl font-bold">T</span>
-                <span className="text-sm font-medium -ml-0.5 mt-1">t</span>
-              </Button>
+                {currentFontSize}
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </button>
             </PopoverTrigger>
-            <PopoverContent className="w-24 p-1 max-h-[200px] overflow-y-auto">
-              {FONT_SIZES.map((size) => (
-                <Button
-                  key={size}
-                  variant={currentFontSize === size ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-center"
-                  onClick={() => {
-                    onFontSize(size);
-                    setFontSizePickerOpen(false);
-                  }}
-                >
-                  {size}
-                </Button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        )}
-        
-        {/* Image - 🖼 */}
-        {allowImages && (
-          <ToolbarButton onClick={onImageUpload} title="Insert Image">
-            <ImageIcon className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
-        )}
-        
-        {/* Highlighter - ✏ */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
-              title="Highlight"
-            >
-              <Highlighter className="h-7 w-7 stroke-[2] text-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-2 max-h-[300px] overflow-y-auto">
-            <p className="text-xs text-muted-foreground mb-2">Highlight Colors</p>
-            <div className="grid grid-cols-8 gap-1">
-              {HIGHLIGHT_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => onHighlight(color.value)}
-                  className="h-7 w-7 rounded-md border border-border hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: color.value === 'transparent' ? 'white' : color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-        
-        {/* Bullet List - ≡• */}
-        <ToolbarButton onClick={onBulletList} title="Bullet List" isActive={isBulletList}>
-          <List className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Numbered List - 1≡ */}
-        <ToolbarButton onClick={onNumberedList} title="Numbered List" isActive={isNumberedList}>
-          <ListOrdered className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        <ToolbarSeparator />
-        
-        {/* Row 2: ≡ ≡ ≡ ≡ ↩ ↪ — ⊞ X₂ X² 📎 */}
-        
-        {/* Align Left */}
-        <ToolbarButton onClick={onAlignLeft} title="Align Left" isActive={alignment === 'left'}>
-          <AlignLeft className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Align Center */}
-        <ToolbarButton onClick={onAlignCenter} title="Align Center" isActive={alignment === 'center'}>
-          <AlignCenter className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Align Right */}
-        <ToolbarButton onClick={onAlignRight} title="Align Right" isActive={alignment === 'right'}>
-          <AlignRight className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Align Justify */}
-        <ToolbarButton onClick={onAlignJustify} title="Justify" isActive={alignment === 'justify'}>
-          <AlignJustify className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Undo */}
-        <ToolbarButton onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-          <Undo className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Redo */}
-        <ToolbarButton onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-          <Redo className="h-7 w-7 stroke-[2] text-foreground" />
-        </ToolbarButton>
-        
-        {/* Horizontal Rule */}
-        {onHorizontalRule && (
-          <ToolbarButton onClick={onHorizontalRule} title="Insert Horizontal Rule">
-            <Minus className="h-7 w-7 stroke-[3] text-foreground" />
-          </ToolbarButton>
-        )}
-        
-        {/* Table */}
-        {showTable && (
-          <Popover open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
-                title="Insert Table"
-              >
-                <Table className="h-7 w-7 stroke-[2] text-foreground" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-4" align="start">
-              <div className="space-y-4">
-                <div className="font-medium text-sm">Insert Table</div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Rows</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => setTableRows(Math.max(1, tableRows - 1))}
-                      >
-                        <Minus className="h-4 w-4 stroke-[3]" />
-                      </Button>
-                      <span className="w-8 text-center text-sm font-bold">{tableRows}</span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => setTableRows(Math.min(20, tableRows + 1))}
-                      >
-                        <Plus className="h-4 w-4 stroke-[3]" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Columns</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => setTableCols(Math.max(1, tableCols - 1))}
-                      >
-                        <Minus className="h-4 w-4 stroke-[3]" />
-                      </Button>
-                      <span className="w-8 text-center text-sm font-bold">{tableCols}</span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => setTableCols(Math.min(10, tableCols + 1))}
-                      >
-                        <Plus className="h-4 w-4 stroke-[3]" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Style Selection */}
-                <div className="space-y-2">
-                  <span className="text-sm">Style</span>
-                  <div className="grid grid-cols-2 gap-1">
-                    {TABLE_STYLE_OPTIONS.map((style) => (
-                      <Button
-                        key={style.id}
-                        variant={tableStyle === style.id ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "h-8 text-xs justify-start",
-                          tableStyle === style.id && "ring-1 ring-primary"
-                        )}
-                        onClick={() => setTableStyle(style.id)}
-                      >
-                        {style.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Grid preview */}
-                <div className="border rounded p-2 bg-muted/30">
-                  <div 
-                    className="grid gap-0.5"
-                    style={{ 
-                      gridTemplateColumns: `repeat(${Math.min(tableCols, 6)}, 1fr)`,
-                    }}
+            <PopoverContent className="w-20 p-1" align="start">
+              <div className="max-h-48 overflow-y-auto">
+                {FONT_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => { onFontSize(size); setFontSizeOpen(false); }}
+                    className={cn(
+                      "w-full px-2 py-1.5 text-sm text-left rounded hover:bg-muted transition-colors",
+                      currentFontSize === size && "bg-primary/10 text-primary font-medium"
+                    )}
                   >
-                    {Array.from({ length: Math.min(tableRows, 5) * Math.min(tableCols, 6) }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="aspect-square bg-primary/20 rounded-sm min-w-[12px]"
-                      />
-                    ))}
-                  </div>
-                  {(tableRows > 5 || tableCols > 6) && (
-                    <p className="text-xs text-muted-foreground mt-1 text-center">
-                      {tableRows}×{tableCols} table
-                    </p>
-                  )}
-                </div>
-
-                <Button 
-                  onClick={() => {
-                    onTableInsert(tableRows, tableCols, tableStyle);
-                    setTablePickerOpen(false);
-                  }} 
-                  className="w-full" 
-                  size="sm"
-                >
-                  Insert {tableStyle.charAt(0).toUpperCase() + tableStyle.slice(1)} Table
-                </Button>
+                    {size}
+                  </button>
+                ))}
               </div>
             </PopoverContent>
           </Popover>
         )}
-        
-        {/* Subscript - X₂ */}
-        {onSubscript && (
-          <ToolbarButton onClick={onSubscript} title="Subscript" isActive={isSubscript}>
-            <span className="flex items-end">
-              <span className="text-lg font-medium">X</span>
-              <span className="text-xs font-medium -mb-0.5">2</span>
-            </span>
-          </ToolbarButton>
-        )}
-        
-        {/* Superscript - X² */}
-        {onSuperscript && (
-          <ToolbarButton onClick={onSuperscript} title="Superscript" isActive={isSuperscript}>
-            <span className="flex items-start">
-              <span className="text-lg font-medium">X</span>
-              <span className="text-xs font-medium -mt-1">2</span>
-            </span>
-          </ToolbarButton>
-        )}
-        
-        {/* Attachment/Link - 📎 */}
-        {onAttachment && (
-          <ToolbarButton onClick={onAttachment} title="Attach File">
-            <Paperclip className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
-        )}
-        
-        {onInsertLink && (
-          <ToolbarButton onClick={onInsertLink} title="Insert Link">
-            <LinkIcon className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
-        )}
-        
-        <ToolbarSeparator />
-        
-        {/* Additional Tools (secondary row) */}
-        
+
         {/* Font Family */}
         {onFontFamily && (
-          <Popover open={fontPickerOpen} onOpenChange={setFontPickerOpen}>
+          <Popover open={fontFamilyOpen} onOpenChange={setFontFamilyOpen}>
             <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-14 min-w-[52px] p-0 flex items-center justify-center rounded-none hover:bg-muted/60 active:bg-muted transition-colors flex-shrink-0" 
+              <button
+                type="button"
                 title="Font"
+                className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
               >
-                <Type className="h-7 w-7 stroke-[2] text-foreground" />
-              </Button>
+                <Type className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 p-1 max-h-[300px] overflow-y-auto">
+            <PopoverContent className="w-40 p-1" align="start">
               {FONT_FAMILIES.map((font) => (
-                <Button
+                <button
                   key={font.value}
-                  variant={currentFontFamily === font.value ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start"
+                  type="button"
+                  onClick={() => { onFontFamily(font.value); setFontFamilyOpen(false); }}
                   style={{ fontFamily: font.value }}
-                  onClick={() => {
-                    onFontFamily(font.value);
-                    setFontPickerOpen(false);
-                  }}
+                  className={cn(
+                    "w-full px-2 py-1.5 text-sm text-left rounded hover:bg-muted transition-colors",
+                    currentFontFamily === font.value && "bg-primary/10 text-primary"
+                  )}
                 >
                   {font.name}
-                </Button>
+                </button>
               ))}
             </PopoverContent>
           </Popover>
         )}
-        
+
+        <Sep />
+
+        {/* Text Formatting: B I U S */}
+        <IconBtn onClick={onBold} title="Bold" active={isBold}>
+          <Bold className="h-[18px] w-[18px]" strokeWidth={isBold ? 2.5 : 1.5} />
+        </IconBtn>
+        <IconBtn onClick={onItalic} title="Italic" active={isItalic}>
+          <Italic className="h-[18px] w-[18px]" strokeWidth={isItalic ? 2.5 : 1.5} />
+        </IconBtn>
+        <IconBtn onClick={onUnderline} title="Underline" active={isUnderline}>
+          <UnderlineIcon className="h-[18px] w-[18px]" strokeWidth={isUnderline ? 2.5 : 1.5} />
+        </IconBtn>
+        {onStrikethrough && (
+          <IconBtn onClick={onStrikethrough} title="Strikethrough" active={isStrikethrough}>
+            <Strikethrough className="h-[18px] w-[18px]" strokeWidth={isStrikethrough ? 2.5 : 1.5} />
+          </IconBtn>
+        )}
+
+        <Sep />
+
+        {/* Text Color */}
+        <Popover open={textColorOpen} onOpenChange={setTextColorOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="Text Color"
+              className="h-9 w-9 flex flex-col items-center justify-center gap-0.5 rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+            >
+              <span className="text-sm font-bold leading-none">A</span>
+              <div className="h-1 w-4 rounded-full" style={{ backgroundColor: selectedTextColor }} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" align="start">
+            <div className="grid grid-cols-6 gap-1">
+              {TEXT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => { onTextColor(color); setSelectedTextColor(color); setTextColorOpen(false); }}
+                  className={cn(
+                    "h-6 w-6 rounded border border-border/50 hover:scale-110 transition-transform",
+                    selectedTextColor === color && "ring-2 ring-primary ring-offset-1"
+                  )}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Highlight */}
+        <Popover open={highlightOpen} onOpenChange={setHighlightOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="Highlight"
+              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+            >
+              <Highlighter className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" align="start">
+            <div className="grid grid-cols-5 gap-1">
+              {HIGHLIGHT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => { onHighlight(color); setSelectedHighlight(color); setHighlightOpen(false); }}
+                  className={cn(
+                    "h-6 w-6 rounded border border-border/50 hover:scale-110 transition-transform",
+                    color === 'transparent' && "bg-[repeating-linear-gradient(45deg,#ccc,#ccc_2px,#fff_2px,#fff_4px)]",
+                    selectedHighlight === color && "ring-2 ring-primary ring-offset-1"
+                  )}
+                  style={{ backgroundColor: color === 'transparent' ? undefined : color }}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Sep />
+
+        {/* Lists */}
+        <IconBtn onClick={onBulletList} title="Bullet List" active={isBulletList}>
+          <List className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        </IconBtn>
+        <IconBtn onClick={onNumberedList} title="Numbered List" active={isNumberedList}>
+          <ListOrdered className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        </IconBtn>
+        {onChecklist && (
+          <IconBtn onClick={onChecklist} title="Checklist" active={isChecklist}>
+            <CheckSquare className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+
+        <Sep />
+
+        {/* Alignment - Compact dropdown */}
+        <Popover open={alignOpen} onOpenChange={setAlignOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="Alignment"
+              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+            >
+              {alignment === 'left' && <AlignLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+              {alignment === 'center' && <AlignCenter className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+              {alignment === 'right' && <AlignRight className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+              {alignment === 'justify' && <AlignJustify className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-1" align="start">
+            <div className="flex gap-0.5">
+              <IconBtn onClick={() => { onAlignLeft(); setAlignOpen(false); }} title="Left" active={alignment === 'left'}>
+                <AlignLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </IconBtn>
+              <IconBtn onClick={() => { onAlignCenter(); setAlignOpen(false); }} title="Center" active={alignment === 'center'}>
+                <AlignCenter className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </IconBtn>
+              <IconBtn onClick={() => { onAlignRight(); setAlignOpen(false); }} title="Right" active={alignment === 'right'}>
+                <AlignRight className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </IconBtn>
+              <IconBtn onClick={() => { onAlignJustify(); setAlignOpen(false); }} title="Justify" active={alignment === 'justify'}>
+                <AlignJustify className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </IconBtn>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Indent / Outdent */}
+        {onOutdent && (
+          <IconBtn onClick={onOutdent} title="Decrease Indent">
+            <Outdent className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+        {onIndent && (
+          <IconBtn onClick={onIndent} title="Increase Indent">
+            <Indent className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+
+        <Sep />
+
+        {/* Table */}
+        {showTable && (
+          <Popover open={tableOpen} onOpenChange={setTableOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                title="Insert Table"
+                className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
+              >
+                <Table className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-3" align="start">
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted-foreground">Insert Table</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Rows</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setTableRows(Math.max(1, tableRows - 1))}
+                      className="h-6 w-6 flex items-center justify-center rounded border hover:bg-muted"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-6 text-center font-medium">{tableRows}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTableRows(Math.min(10, tableRows + 1))}
+                      className="h-6 w-6 flex items-center justify-center rounded border hover:bg-muted"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Cols</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setTableCols(Math.max(1, tableCols - 1))}
+                      className="h-6 w-6 flex items-center justify-center rounded border hover:bg-muted"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-6 text-center font-medium">{tableCols}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTableCols(Math.min(8, tableCols + 1))}
+                      className="h-6 w-6 flex items-center justify-center rounded border hover:bg-muted"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { onTableInsert(tableRows, tableCols); setTableOpen(false); }}
+                  className="w-full h-8 text-sm font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                >
+                  Insert
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {/* Image */}
+        {allowImages && (
+          <IconBtn onClick={onImageUpload} title="Insert Image">
+            <ImageIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+
+        {/* Horizontal Rule */}
+        {onHorizontalRule && (
+          <IconBtn onClick={onHorizontalRule} title="Horizontal Line">
+            <Minus className="h-[18px] w-[18px]" strokeWidth={2} />
+          </IconBtn>
+        )}
+
+        <Sep />
+
         {/* Headings */}
-        <Popover>
+        <Popover open={headingOpen} onOpenChange={setHeadingOpen}>
           <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
+            <button
+              type="button"
               title="Headings"
+              className="h-9 w-9 flex items-center justify-center rounded hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              <Heading1 className="h-7 w-7 stroke-[2] text-foreground" />
-            </Button>
+              <Heading1 className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            </button>
           </PopoverTrigger>
-          <PopoverContent className="w-32 p-1">
-            <Button variant="ghost" size="sm" className="w-full justify-start text-lg font-bold" onClick={() => onHeading(1)}>
+          <PopoverContent className="w-32 p-1" align="start">
+            <button
+              type="button"
+              onClick={() => { onHeading(1); setHeadingOpen(false); }}
+              className="w-full px-2 py-1.5 text-left text-lg font-bold rounded hover:bg-muted"
+            >
               Heading 1
-            </Button>
-            <Button variant="ghost" size="sm" className="w-full justify-start text-base font-bold" onClick={() => onHeading(2)}>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onHeading(2); setHeadingOpen(false); }}
+              className="w-full px-2 py-1.5 text-left text-base font-bold rounded hover:bg-muted"
+            >
               Heading 2
-            </Button>
-            <Button variant="ghost" size="sm" className="w-full justify-start text-sm font-bold" onClick={() => onHeading(3)}>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onHeading(3); setHeadingOpen(false); }}
+              className="w-full px-2 py-1.5 text-left text-sm font-semibold rounded hover:bg-muted"
+            >
               Heading 3
-            </Button>
-            <Button variant="ghost" size="sm" className="w-full justify-start text-sm" onClick={() => onHeading('p')}>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onHeading('p'); setHeadingOpen(false); }}
+              className="w-full px-2 py-1.5 text-left text-sm rounded hover:bg-muted"
+            >
               Normal
-            </Button>
+            </button>
           </PopoverContent>
         </Popover>
-        
-        {/* Text Case */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-14 min-w-[52px] p-0 flex-shrink-0 rounded-none hover:bg-muted/60" 
-              title="Change Case"
-            >
-              <CaseSensitive className="h-7 w-7 stroke-[2] text-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40 p-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start gap-2" 
-              onClick={() => onTextCase('upper')}
-            >
-              <CaseUpper className="h-5 w-5" />
-              UPPERCASE
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start gap-2"
-              onClick={() => onTextCase('lower')}
-            >
-              <CaseLower className="h-5 w-5" />
-              lowercase
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start gap-2"
-              onClick={() => onTextCase('capitalize')}
-            >
-              <Type className="h-5 w-5" />
-              Capitalize Words
-            </Button>
-          </PopoverContent>
-        </Popover>
-        
+
+        {/* Subscript / Superscript */}
+        {onSubscript && (
+          <IconBtn onClick={onSubscript} title="Subscript" active={isSubscript}>
+            <Subscript className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+        {onSuperscript && (
+          <IconBtn onClick={onSuperscript} title="Superscript" active={isSuperscript}>
+            <Superscript className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+
+        {/* Clear Formatting */}
         {onClearFormatting && (
-          <ToolbarButton onClick={onClearFormatting} title="Clear Formatting">
-            <RemoveFormatting className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
+          <IconBtn onClick={onClearFormatting} title="Clear Formatting">
+            <RemoveFormatting className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
         )}
-        
-        {/* Text Direction */}
-        {onTextDirection && (
-          <>
-            <ToolbarButton 
-              onClick={() => onTextDirection('ltr')} 
-              title="Left to Right"
-              isActive={textDirection === 'ltr'}
-            >
-              <PilcrowLeft className="h-7 w-7 stroke-[2] text-foreground" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => onTextDirection('rtl')} 
-              title="Right to Left"
-              isActive={textDirection === 'rtl'}
-            >
-              <PilcrowRight className="h-7 w-7 stroke-[2] text-foreground" />
-            </ToolbarButton>
-          </>
+
+        <Sep />
+
+        {/* Link */}
+        {onInsertLink && (
+          <IconBtn onClick={onInsertLink} title="Insert Link">
+            <LinkIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
         )}
-        
+
         {/* Note Link */}
         {onInsertNoteLink && (
-          <ToolbarButton onClick={onInsertNoteLink} title="Link to Note">
-            <Link2 className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
+          <IconBtn onClick={onInsertNoteLink} title="Link to Note">
+            <Link2 className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
         )}
-        
-        {/* Emoji picker */}
+
+        {/* Attachment */}
+        {onAttachment && (
+          <IconBtn onClick={onAttachment} title="Attach File">
+            <Paperclip className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+        )}
+
+        {/* Emoji */}
         {onEmojiInsert && (
           <EmojiPicker onEmojiSelect={onEmojiInsert} />
         )}
-        
-        {/* Comment */}
-        {onComment && (
-          <ToolbarButton onClick={onComment} title="Add Comment">
-            <MessageSquare className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
-        )}
-        
+
         {/* Voice Record */}
         {onVoiceRecord && (
-          <ToolbarButton onClick={onVoiceRecord} title="Voice Recording">
-            <Mic className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
+          <IconBtn onClick={onVoiceRecord} title="Voice Recording">
+            <Mic className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
         )}
-        
-        <ToolbarSeparator />
-        
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-0 flex-shrink-0">
-          <ToolbarButton 
+
+        <Sep />
+
+        {/* Text Direction */}
+        {onTextDirection && (
+          <>
+            <IconBtn onClick={() => onTextDirection('ltr')} title="Left to Right" active={textDirection === 'ltr'}>
+              <PilcrowLeft className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            </IconBtn>
+            <IconBtn onClick={() => onTextDirection('rtl')} title="Right to Left" active={textDirection === 'rtl'}>
+              <PilcrowRight className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            </IconBtn>
+          </>
+        )}
+
+        {/* Zoom */}
+        <div className="flex items-center gap-0 flex-shrink-0 ml-auto">
+          <IconBtn 
             onClick={() => onZoomChange(Math.max(50, zoom - 10))} 
-            title="Zoom Out"
             disabled={zoom <= 50}
+            title="Zoom Out"
           >
-            <ZoomOut className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
-          
-          <div className="w-16 mx-1">
-            <Slider
-              value={[zoom]}
-              min={50}
-              max={200}
-              step={10}
-              onValueChange={(val) => onZoomChange(val[0])}
-              className="w-full"
-            />
-          </div>
-          
-          <span className="text-xs text-muted-foreground w-10 text-center font-medium">
-            {zoom}%
-          </span>
-          
-          <ToolbarButton 
+            <ZoomOut className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
+          <span className="text-xs font-medium w-10 text-center tabular-nums">{zoom}%</span>
+          <IconBtn 
             onClick={() => onZoomChange(Math.min(200, zoom + 10))} 
-            title="Zoom In"
             disabled={zoom >= 200}
+            title="Zoom In"
           >
-            <ZoomIn className="h-7 w-7 stroke-[2] text-foreground" />
-          </ToolbarButton>
+            <ZoomIn className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </IconBtn>
         </div>
       </div>
     </div>
