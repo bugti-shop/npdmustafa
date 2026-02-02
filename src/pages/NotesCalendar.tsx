@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NotesCalendarView } from '@/components/NotesCalendarView';
-import { Calendar as CalendarIcon, Plus, StickyNote, FileText, FileEdit, Pen, Filter, FileCode, GitBranch, Sun, Moon, Mic } from 'lucide-react';
+import { Plus, StickyNote, FileText, FileEdit, Pen, Filter, FileCode, Sun, Moon, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NoteEditor } from '@/components/NoteEditor';
 import { Note, Folder, NoteType } from '@/types/note';
@@ -9,7 +9,6 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { format, isSameDay } from 'date-fns';
 import { NoteCard } from '@/components/NoteCard';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 import appLogo from '@/assets/app-logo.png';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { saveNoteToDBSingle, deleteNoteFromDB } from '@/utils/noteStorage';
@@ -21,14 +20,14 @@ const NotesCalendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
-  // Use global notes context - no more local loading!
+  // Use global notes context
   const { notes, setNotes } = useNotes();
   
   const [selectedDateNotes, setSelectedDateNotes] = useState<Note[]>([]);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [defaultType, setDefaultType] = useState<NoteType>('regular');
   const [selectedNoteTypes, setSelectedNoteTypes] = useState<NoteType[]>([
-    'sticky', 'lined', 'regular', 'sketch', 'code'
+    'sticky', 'lined', 'regular', 'sketch', 'code', 'voice'
   ]);
   const [folders, setFolders] = useState<Folder[]>([]);
   
@@ -41,7 +40,7 @@ const NotesCalendar = () => {
     loadFolders();
   }, []);
 
-  // Filter notes for selected date (no loading needed - notes come from context)
+  // Filter notes for selected date
   useEffect(() => {
     if (date) {
       const notesForDate = notes.filter(note =>
@@ -56,7 +55,6 @@ const NotesCalendar = () => {
 
   const handleSaveNote = async (noteData: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingNote) {
-      // Update existing note - preserve original createdAt
       const updatedNote: Note = {
         ...editingNote,
         ...noteData,
@@ -67,7 +65,6 @@ const NotesCalendar = () => {
       setNotes(updatedNotes);
       await saveNoteToDBSingle(updatedNote);
     } else {
-      // Create new note with selected date
       const newNote: Note = {
         ...noteData,
         id: Date.now().toString(),
@@ -81,7 +78,6 @@ const NotesCalendar = () => {
     }
     setIsEditorOpen(false);
     setEditingNote(null);
-    // Trigger calendar refresh
     window.dispatchEvent(new Event('notesUpdated'));
   };
 
@@ -117,82 +113,78 @@ const NotesCalendar = () => {
     const updatedNotes = notes.filter(n => n.id !== noteId);
     setNotes(updatedNotes);
     await deleteNoteFromDB(noteId);
-    // Trigger calendar refresh
     window.dispatchEvent(new Event('notesUpdated'));
   };
 
   return (
     <div className="min-h-screen min-h-screen-dynamic bg-background pb-16 sm:pb-20">
-      <header className="border-b sticky top-0 bg-background z-10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="container mx-auto px-2 xs:px-3 sm:px-4 py-2">
-          <div className="flex items-center justify-between gap-1 xs:gap-2">
-            <div className="flex items-center gap-1.5 xs:gap-2 min-w-0 flex-shrink-0">
-              <img src={appLogo} alt="Npd" className="h-6 w-6 xs:h-7 xs:w-7 sm:h-8 sm:w-8 flex-shrink-0" />
-              <h1 className="text-base xs:text-lg sm:text-xl font-bold truncate">{t('nav.calendar')}</h1>
-            </div>
-            <div className="flex items-center gap-0.5 xs:gap-1 flex-shrink-0">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleDarkMode}
-                className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 touch-target"
-                title="Toggle theme"
-              >
-                {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 touch-target">
-                    <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 z-50 bg-card max-h-[70vh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                  <DropdownMenuLabel>{t('notesMenu.filterByType')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {(Object.keys(NOTE_TYPE_LABELS) as NoteType[]).map((type) => {
-                    const { label, icon: Icon } = NOTE_TYPE_LABELS[type];
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={type}
-                        checked={selectedNoteTypes.includes(type)}
-                        onCheckedChange={() => toggleNoteType(type)}
-                        className="gap-2"
-                      >
-                        <Icon className="h-4 w-4" />
-                        {label}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+      {/* Minimal Header */}
+      <header className="sticky top-0 bg-background z-10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={appLogo} alt="Npd" className="h-7 w-7 flex-shrink-0" />
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleDarkMode}
+              className="h-8 w-8"
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Filter className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 z-50 bg-card">
+                <DropdownMenuLabel>{t('notesMenu.filterByType')}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(Object.keys(NOTE_TYPE_LABELS) as NoteType[]).map((type) => {
+                  const { label, icon: Icon } = NOTE_TYPE_LABELS[type];
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={type}
+                      checked={selectedNoteTypes.includes(type)}
+                      onCheckedChange={() => toggleNoteType(type)}
+                      className="gap-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-2 xs:px-3 sm:px-4 py-3 xs:py-4 sm:py-6 pb-28 xs:pb-32">
-        <div className="max-w-md mx-auto space-y-6">
-          <NotesCalendarView
-            selectedDate={date}
-            onDateSelect={setDate}
-          />
+      {/* Full-Page Calendar */}
+      <main className="pb-32">
+        <NotesCalendarView
+          selectedDate={date}
+          onDateSelect={setDate}
+        />
 
-          {selectedDateNotes.length > 0 && (
-            <div className="space-y-3 animate-fade-in">
-              <h2 className="text-lg font-semibold text-foreground">
-                {t('notesMenu.notesForDate', { date: format(date || new Date(), 'MMMM dd, yyyy') })}
-              </h2>
-              {selectedDateNotes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onEdit={handleEditNote}
-                  onDelete={handleDeleteNote}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Notes for Selected Date */}
+        {selectedDateNotes.length > 0 && (
+          <div className="px-4 space-y-3 animate-fade-in mt-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              {t('notesMenu.notesForDate', { date: format(date || new Date(), 'MMMM dd, yyyy') })}
+            </h2>
+            {selectedDateNotes.map((note) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                onEdit={handleEditNote}
+                onDelete={handleDeleteNote}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       <DropdownMenu>

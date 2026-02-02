@@ -107,62 +107,54 @@ export const NotesCalendarView = ({
   };
 
   return (
-    <div className="p-6 bg-background">
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={handlePrevMonth}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-4 h-4 text-foreground" />
-        </button>
-
-        <h3 className="text-base font-normal text-foreground text-center">
-          {format(displayMonth, "MMMM yyyy")}
-        </h3>
-
-        <button
-          onClick={handleNextMonth}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-4 h-4 text-foreground" />
-        </button>
+    <div className="w-full bg-background">
+      {/* Month Header - Large and Bold like TickTick */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <h2 className="text-2xl font-bold text-foreground">
+          {format(displayMonth, "MMMM")}
+        </h2>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handlePrevMonth}
+            className="p-2 hover:bg-accent rounded-full transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <button
+            onClick={handleNextMonth}
+            className="p-2 hover:bg-accent rounded-full transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
       </div>
 
-      {/* Week numbers toggle */}
-      <div className="flex items-center justify-end gap-2 mb-3">
-        <Label htmlFor="week-numbers" className="text-xs text-muted-foreground">Week #</Label>
-        <Switch 
-          id="week-numbers" 
-          checked={showWeekNumbers} 
-          onCheckedChange={setShowWeekNumbers}
-          className="scale-75"
-        />
-      </div>
-
-      <div className={cn("grid gap-2 mb-3", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
+      {/* Week Days Header - Full Width */}
+      <div className={cn("grid px-2", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-normal text-muted-foreground h-8 flex items-center justify-center"
+            className="text-center text-sm font-medium text-muted-foreground py-3"
           >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="space-y-2">
+      {/* Calendar Grid - Large Cells */}
+      <div className="px-2">
         {weeksInMonth.map((week, weekIndex) => (
-          <div key={weekIndex} className={cn("grid gap-2", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
+          <div key={weekIndex} className={cn("grid", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
             {showWeekNumbers && (
-              <div className="aspect-square w-full flex items-center justify-center text-xs font-medium text-muted-foreground bg-muted/30 rounded-lg">
+              <div className="h-14 flex items-center justify-center text-xs font-medium text-muted-foreground">
                 {week.weekNumber}
               </div>
             )}
             {week.days.map((day, dayIndex) => {
               if (!day) {
-                return <div key={`empty-${weekIndex}-${dayIndex}`} className="aspect-square" />;
+                return <div key={`empty-${weekIndex}-${dayIndex}`} className="h-14" />;
               }
 
               const hasNoteOnDay = hasNote(day);
@@ -172,41 +164,43 @@ export const NotesCalendarView = ({
               const isToday = isSameDay(day, today);
               const isSelected = selectedDate && isSameDay(day, selectedDate);
 
-              let bgClass = "bg-transparent text-foreground hover:bg-muted";
-              let bgStyle = {};
-
-              if (isSelected) {
-                bgClass = "text-foreground hover:opacity-90";
-                bgStyle = { backgroundColor: "#a3dbf6" };
-              } else if (hasNoteOnDay && !hasTaskOnDay && !hasEventOnDay && !hasSystemEventOnDay) {
-                bgClass = "text-white hover:opacity-90";
-                bgStyle = { backgroundColor: "#3a99dd" };
-              }
-
               return (
                 <button
                   key={day.toString()}
                   onClick={() => onDateSelect?.(day)}
-                  style={bgStyle}
                   className={cn(
-                    "aspect-square w-full flex flex-col items-center justify-center rounded-lg text-xs font-normal transition-all focus:outline-none relative",
-                    bgClass,
-                    isToday && !hasNoteOnDay && !isSelected ? "ring-2 ring-primary" : "",
+                    "h-14 flex flex-col items-center justify-center relative transition-all focus:outline-none",
                     "cursor-pointer"
                   )}
                 >
-                  <span>{format(day, "d")}</span>
-                  {/* Colored dots for tasks, events, and system calendar */}
-                  {(hasTaskOnDay || hasEventOnDay || hasSystemEventOnDay) && (
-                    <div className="flex gap-0.5 mt-0.5 absolute bottom-1">
+                  <span 
+                    className={cn(
+                      "w-10 h-10 flex items-center justify-center rounded-full text-base font-medium transition-all",
+                      isSelected 
+                        ? "bg-primary text-primary-foreground" 
+                        : isToday 
+                          ? "bg-primary text-primary-foreground"
+                          : hasNoteOnDay 
+                            ? "text-foreground font-semibold" 
+                            : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    {format(day, "d")}
+                  </span>
+                  {/* Colored dots for tasks, events, notes */}
+                  {(hasTaskOnDay || hasEventOnDay || hasSystemEventOnDay || hasNoteOnDay) && (
+                    <div className="flex gap-1 mt-0.5 absolute bottom-1">
+                      {hasNoteOnDay && !hasTaskOnDay && !hasEventOnDay && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" title="Note" />
+                      )}
                       {hasTaskOnDay && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="NPD Task" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Task" />
                       )}
                       {hasEventOnDay && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500" title="NPD Event" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500" title="Event" />
                       )}
                       {hasSystemEventOnDay && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="Device Calendar" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="Device" />
                       )}
                     </div>
                   )}
@@ -217,9 +211,20 @@ export const NotesCalendarView = ({
         ))}
       </div>
 
+      {/* Week numbers toggle - moved below calendar */}
+      <div className="flex items-center justify-end gap-2 px-4 py-2">
+        <Label htmlFor="week-numbers" className="text-xs text-muted-foreground">Week #</Label>
+        <Switch 
+          id="week-numbers" 
+          checked={showWeekNumbers} 
+          onCheckedChange={setShowWeekNumbers}
+          className="scale-75"
+        />
+      </div>
+
       {/* Legend */}
       {(taskDates.length > 0 || eventDates.length > 0 || systemCalendarDates.length > 0) && (
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
+        <div className="flex items-center justify-center gap-4 px-4 py-2 text-xs text-muted-foreground flex-wrap">
           {taskDates.length > 0 && (
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
