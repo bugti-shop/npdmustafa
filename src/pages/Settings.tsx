@@ -19,6 +19,8 @@ import { NoteTypeVisibilitySheet } from '@/components/NoteTypeVisibilitySheet';
 import { NotesSettingsSheet } from '@/components/NotesSettingsSheet';
 import { TasksSettingsSheet } from '@/components/TasksSettingsSheet';
 import { CustomizeNavigationSheet } from '@/components/CustomizeNavigationSheet';
+import { AppLockSettingsSheet } from '@/components/AppLockSettingsSheet';
+import { AppLockSetup } from '@/components/AppLockSetup';
 import { WidgetSettingsSheet } from '@/components/WidgetSettingsSheet';
 import {
   AlertDialog,
@@ -59,6 +61,8 @@ const Settings = () => {
   const [showTasksSettingsSheet, setShowTasksSettingsSheet] = useState(false);
   const [showCustomizeNavigationSheet, setShowCustomizeNavigationSheet] = useState(false);
   const [showWidgetSettingsSheet, setShowWidgetSettingsSheet] = useState(false);
+  const [showAppLockSettingsSheet, setShowAppLockSettingsSheet] = useState(false);
+  const [showAppLockSetup, setShowAppLockSetup] = useState(false);
   const [showNotificationsExpanded, setShowNotificationsExpanded] = useState(false);
   const [hapticIntensity, setHapticIntensity] = useState<'off' | 'light' | 'medium' | 'heavy'>('medium');
   const [isRestoring, setIsRestoring] = useState(false);
@@ -452,6 +456,12 @@ const Settings = () => {
             )}
           </div>
 
+          {/* Security Section */}
+          <div className="border border-border rounded-lg overflow-hidden">
+            <SectionHeading title={t('settings.security', 'Security')} />
+            <SettingsRow label={t('settings.appLock', 'App Lock')} onClick={() => setShowAppLockSettingsSheet(true)} />
+          </div>
+
           {/* Data Management Section */}
           <div className="border border-border rounded-lg overflow-hidden">
             <SectionHeading title={t('settings.dataManagement', 'Data Management')} />
@@ -817,6 +827,24 @@ const Settings = () => {
         isOpen={showWidgetSettingsSheet}
         onClose={() => setShowWidgetSettingsSheet(false)}
       />
+
+      <AppLockSettingsSheet
+        open={showAppLockSettingsSheet}
+        onOpenChange={setShowAppLockSettingsSheet}
+        onSetupLock={() => {
+          setShowAppLockSettingsSheet(false);
+          setShowAppLockSetup(true);
+        }}
+      />
+
+      {showAppLockSetup && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <AppLockSetup
+            onComplete={() => setShowAppLockSetup(false)}
+            onCancel={() => setShowAppLockSetup(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
