@@ -13,14 +13,14 @@ const STORAGE_KEYS = {
   ENABLED: 'persistent_notification_enabled',
 };
 
-// Note type emoji/icon mappings (icons only, no text)
+// Note type short labels for notification actions (no emojis, clean text)
 const NOTE_TYPE_LABELS: Record<NoteType, string> = {
-  regular: '⬜',
-  lined: '📄',
-  sticky: '📕',
-  code: '<>',
-  sketch: '🎨',
-  voice: '🎤',
+  regular: 'Note',
+  lined: 'Lined',
+  sticky: 'Sticky',
+  code: 'Code',
+  sketch: 'Sketch',
+  voice: 'Voice',
 };
 
 export interface PersistentNotificationManager {
@@ -138,20 +138,20 @@ class PersistentNotificationService implements PersistentNotificationManager {
       // Cancel existing first to avoid duplicates
       await this.hidePersistentNotification();
 
-      // Get visible note types (excluding voice since it's now inside editor)
-      const visibleTypes = (await getVisibleNoteTypes()).filter(t => t !== 'voice');
-      this.cachedVisibleTypes = visibleTypes;
+      // Get all note types (include all types for notification)
+      const allNoteTypes: NoteType[] = ['sticky', 'regular', 'lined', 'code', 'sketch'];
+      this.cachedVisibleTypes = allNoteTypes;
 
-      // Build actions dynamically based on visible note types
-      const noteActions = visibleTypes.map(type => ({
+      // Build actions dynamically - all note types + task
+      const noteActions = allNoteTypes.map(type => ({
         id: `add_note_${type}`,
         title: NOTE_TYPE_LABELS[type],
       }));
 
-      // Add the task action at the end (icon only)
+      // Add the task action at the end
       const actions = [
         ...noteActions,
-        { id: 'add_task', title: '✅' },
+        { id: 'add_task', title: 'Task' },
       ];
 
       // Register action types with dynamic actions
