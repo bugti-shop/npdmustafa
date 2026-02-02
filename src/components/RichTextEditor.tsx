@@ -555,6 +555,37 @@ export const RichTextEditor = ({
         }
         return;
       }
+      
+      // Check if clicked on waveform seek area
+      const seekArea = target.closest('.voice-seek-area') as HTMLElement;
+      if (seekArea) {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = seekArea.closest('.voice-recording-inline') as HTMLElement;
+        const audio = container?.querySelector('audio') as HTMLAudioElement;
+        if (audio && audio.duration) {
+          const rect = seekArea.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+          audio.currentTime = percentage * audio.duration;
+          
+          // Update progress bar immediately for visual feedback
+          const progressBar = container.querySelector('.waveform-progress') as HTMLElement;
+          if (progressBar) {
+            progressBar.style.width = `${percentage * 100}%`;
+          }
+          
+          // Update duration display
+          const durationSpan = container.querySelector('.voice-duration') as HTMLElement;
+          if (durationSpan) {
+            const current = audio.currentTime;
+            const mins = Math.floor(current / 60);
+            const secs = Math.floor(current % 60);
+            durationSpan.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+          }
+        }
+        return;
+      }
     };
     
     // Run on mount and when content changes
@@ -2282,10 +2313,20 @@ export const RichTextEditor = ({
           .voice-recording-inline .voice-waveform {
             flex: 1;
             position: relative;
-            height: 20px;
+            height: 24px;
             display: flex;
             align-items: center;
             min-width: 120px;
+            cursor: pointer;
+            padding: 4px 0;
+            border-radius: 4px;
+            transition: background 0.15s;
+          }
+          .voice-recording-inline .voice-waveform:hover {
+            background: hsl(var(--muted-foreground) / 0.08);
+          }
+          .voice-recording-inline .voice-waveform:active {
+            background: hsl(var(--muted-foreground) / 0.12);
           }
           .voice-recording-inline .waveform-background {
             position: relative;
