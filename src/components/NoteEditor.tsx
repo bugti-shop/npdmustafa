@@ -175,13 +175,17 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       return `${mins}:${s.toString().padStart(2, '0')}`;
     };
     
-    // Generate dotted waveform pattern (WhatsApp style)
-    const generateWaveformDots = () => {
-      const dots = [];
+    // Generate waveform bars with varying heights for dynamic look
+    const generateWaveformBars = (isProgress = false) => {
+      const bars = [];
+      // Pre-defined heights to create a natural waveform pattern
+      const heights = [4, 8, 12, 6, 14, 10, 16, 8, 12, 18, 10, 6, 14, 8, 16, 12, 6, 10, 14, 8, 18, 12, 6, 10, 16, 8, 14, 10, 6, 12];
       for (let i = 0; i < 30; i++) {
-        dots.push(`<span class="waveform-dot" data-index="${i}" style="display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: hsl(var(--muted-foreground) / 0.4); margin: 0 1.5px;"></span>`);
+        const height = heights[i % heights.length];
+        const color = isProgress ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.35)';
+        bars.push(`<span class="waveform-bar" data-index="${i}" style="display: inline-block; width: 3px; height: ${height}px; border-radius: 2px; background: ${color}; margin: 0 1px;"></span>`);
       }
-      return dots.join('');
+      return bars.join('');
     };
     
     const audioPlayerHtml = `
@@ -193,10 +197,10 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
         </button>
         <div class="voice-waveform voice-seek-area" role="slider" aria-label="Seek audio" tabindex="0">
           <div class="waveform-progress" style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; overflow: hidden; display: flex; align-items: center; pointer-events: none;">
-            ${generateWaveformDots().replace(/hsl\(var\(--muted-foreground\) \/ 0\.4\)/g, 'hsl(var(--primary))')}
+            ${generateWaveformBars(true)}
           </div>
           <div class="waveform-background" style="display: flex; align-items: center; pointer-events: none;">
-            ${generateWaveformDots()}
+            ${generateWaveformBars(false)}
           </div>
         </div>
         <span class="voice-duration">${formatDuration(duration)}</span>
