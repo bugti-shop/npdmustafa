@@ -149,13 +149,6 @@ export default function Profile() {
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Connection Status Banner */}
-        {!isOnline && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            <WifiOff className="h-4 w-4" />
-            <span>{t('profile.offlineMode', 'You are offline. Changes will sync when connection is restored.')}</span>
-          </div>
-        )}
 
         {/* Profile Section */}
         <Card>
@@ -222,7 +215,8 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Sync Section */}
+        {/* Sync Section - Only show when signed in */}
+        {isSignedIn && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -324,14 +318,9 @@ export default function Profile() {
                 </div>
               </>
             )}
-
-            {!isSignedIn && (
-              <div className="text-center text-muted-foreground text-sm">
-                {t('profile.signInToSync')}
-              </div>
-            )}
           </CardContent>
         </Card>
+        )}
       </div>
 
       {lastDashboard === 'todo' ? <TodoBottomNavigation /> : <BottomNavigation />}
