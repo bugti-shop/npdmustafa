@@ -1,20 +1,58 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Keyboard } from '@capacitor/keyboard';
 
 /**
- * Hook to detect keyboard height on mobile devices using the visualViewport API.
+ * Hook to detect keyboard height on mobile devices.
+ * Uses Capacitor Keyboard plugin on native platforms for accurate detection.
+ * Falls back to visualViewport API on web.
  * Updates CSS custom property --keyboard-inset for use in fixed position elements.
  */
 export const useKeyboardHeight = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    // This works on iOS Safari and Chrome for Android
+    const isNative = Capacitor.isNativePlatform();
+
+    // Native platform: Use Capacitor Keyboard plugin
+    if (isNative) {
+      let showListener: { remove: () => void } | null = null;
+      let hideListener: { remove: () => void } | null = null;
+
+      const setupNativeListeners = async () => {
+        try {
+          // Listen for keyboard show event
+          showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+            const height = info.keyboardHeight;
+            setKeyboardHeight(height);
+            document.documentElement.style.setProperty('--keyboard-inset', `${height}px`);
+          });
+
+          // Listen for keyboard hide event
+          hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+            setKeyboardHeight(0);
+            document.documentElement.style.setProperty('--keyboard-inset', '0px');
+          });
+        } catch (error) {
+          console.error('[useKeyboardHeight] Failed to setup native keyboard listeners:', error);
+        }
+      };
+
+      setupNativeListeners();
+
+      return () => {
+        showListener?.remove();
+        hideListener?.remove();
+        document.documentElement.style.setProperty('--keyboard-inset', '0px');
+      };
+    }
+
+    // Web fallback: Use visualViewport API
     if (typeof window === 'undefined' || !window.visualViewport) {
       return;
     }
 
     const viewport = window.visualViewport;
-    let initialHeight = viewport.height;
 
     const handleResize = () => {
       // Calculate the difference between initial viewport and current viewport
