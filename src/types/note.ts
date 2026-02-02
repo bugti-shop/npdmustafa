@@ -30,7 +30,7 @@ export interface ExpenseEntry {
   receiptId?: string; // Reference to receipt image in IndexedDB
 }
 
-export type Priority = 'high' | 'medium' | 'low' | 'none';
+export type Priority = 'high' | 'medium' | 'low' | 'none' | (string & {});
 export type RepeatType = 'none' | 'hourly' | 'daily' | 'weekly' | 'weekdays' | 'weekends' | 'monthly' | 'yearly' | 'custom';
 export type TaskStatus = 'not_started' | 'in_progress' | 'almost_done' | 'completed';
 

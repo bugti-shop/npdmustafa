@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ChevronRight, ChevronLeft, ListTodo, Settings2, Bell, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ListTodo, Settings2, Bell, Trash2, Flag, Plus, Pencil, X, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { getSetting, setSetting } from '@/utils/settingsStorage';
 import { toast } from 'sonner';
 import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
+import { CustomPriority, getPriorities, savePriorities, DEFAULT_PRIORITIES } from '@/utils/priorityStorage';
 import {
   Select,
   SelectContent,
@@ -15,9 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export interface TasksSettings {
-  defaultPriority: 'none' | 'low' | 'medium' | 'high';
+  defaultPriority: string; // Changed to string to support custom priorities
   defaultDueDate: 'none' | 'today' | 'tomorrow';
   showCompletedTasks: boolean;
   autoArchiveCompleted: boolean;
@@ -50,7 +63,15 @@ const DEFAULT_TASKS_SETTINGS: TasksSettings = {
   reminderVibration: true,
 };
 
-type SubPage = 'main' | 'defaults' | 'display' | 'behavior' | 'reminders';
+// Preset colors for priority selection
+const PRIORITY_COLORS = [
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+  '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
+  '#EC4899', '#F43F5E', '#78716C', '#6B7280', '#64748B'
+];
+
+type SubPage = 'main' | 'defaults' | 'display' | 'behavior' | 'reminders' | 'priorities';
 
 interface TasksSettingsSheetProps {
   isOpen: boolean;
@@ -62,6 +83,14 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
   const [settings, setSettings] = useState<TasksSettings>(DEFAULT_TASKS_SETTINGS);
   const [currentPage, setCurrentPage] = useState<SubPage>('main');
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Priority customization state
+  const [priorities, setPriorities] = useState<CustomPriority[]>(DEFAULT_PRIORITIES);
+  const [editingPriority, setEditingPriority] = useState<CustomPriority | null>(null);
+  const [newPriorityName, setNewPriorityName] = useState('');
+  const [newPriorityColor, setNewPriorityColor] = useState('#3B82F6');
+  const [isAddingPriority, setIsAddingPriority] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useHardwareBackButton({
     onBack: () => {
@@ -95,6 +124,9 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
       if (saved) {
         setSettings({ ...DEFAULT_TASKS_SETTINGS, ...saved });
       }
+      // Load priorities
+      const loadedPriorities = await getPriorities();
+      setPriorities(loadedPriorities);
     } catch (error) {
       console.error('Error loading tasks settings:', error);
     } finally {
@@ -191,6 +223,12 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
             subtitle={t('settings.behaviorSettingsDesc', 'Swipe actions, confirmations')}
             onClick={() => setCurrentPage('behavior')}
           />
+          <SettingsRow 
+            icon={Flag}
+            label={t('settings.prioritySettings', 'Priority Settings')}
+            subtitle={t('settings.prioritySettingsDesc', 'Customize priority colors and names')}
+            onClick={() => setCurrentPage('priorities')}
+          />
         </div>
       </ScrollArea>
     </>
@@ -215,16 +253,31 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
             </label>
             <Select 
               value={settings.defaultPriority} 
-              onValueChange={(v: TasksSettings['defaultPriority']) => updateSetting('defaultPriority', v)}
+              onValueChange={(v) => updateSetting('defaultPriority', v)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: priorities.find(p => p.id === settings.defaultPriority)?.color || '#6B7280' }}
+                    />
+                    {priorities.find(p => p.id === settings.defaultPriority)?.name || 'None'}
+                  </div>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{t('priority.none', 'None')}</SelectItem>
-                <SelectItem value="low">{t('priority.low', 'Low')}</SelectItem>
-                <SelectItem value="medium">{t('priority.medium', 'Medium')}</SelectItem>
-                <SelectItem value="high">{t('priority.high', 'High')}</SelectItem>
+                {priorities.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      {p.name}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -437,6 +490,214 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
     </>
   );
 
+  // Priority Settings page
+  const renderPrioritiesPage = () => (
+    <>
+      <SheetHeader className="px-4 py-3 border-b">
+        <div className="flex items-center gap-2">
+          <BackButton onClick={() => setCurrentPage('main')} />
+          <SheetTitle className="text-lg">{t('settings.prioritySettings', 'Priority Settings')}</SheetTitle>
+        </div>
+      </SheetHeader>
+      <ScrollArea className="flex-1">
+        <div className="py-2">
+          <SectionHeading title={t('settings.customizePriorities', 'Customize Priorities')} />
+          
+          {/* Existing Priorities */}
+          {priorities.map((priority) => (
+            <div key={priority.id} className="px-4 py-3 border-b border-border/50">
+              {editingPriority?.id === priority.id ? (
+                <div className="space-y-3">
+                  <Input
+                    value={editingPriority.name}
+                    onChange={(e) => setEditingPriority({ ...editingPriority, name: e.target.value })}
+                    placeholder={t('settings.priorityName', 'Priority name')}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {PRIORITY_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setEditingPriority({ ...editingPriority, color })}
+                        className={cn(
+                          "h-8 w-8 rounded-full border-2 transition-all",
+                          editingPriority.color === color ? "ring-2 ring-ring ring-offset-2" : "border-transparent"
+                        )}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const updated = priorities.map(p => 
+                          p.id === editingPriority.id ? editingPriority : p
+                        );
+                        await savePriorities(updated);
+                        setPriorities(updated);
+                        setEditingPriority(null);
+                        toast.success(t('settings.prioritySaved', 'Priority saved'));
+                      }}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      {t('common.save', 'Save')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingPriority(null)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      {t('common.cancel', 'Cancel')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-6 h-6 rounded-full border-2 border-border"
+                      style={{ backgroundColor: priority.color }}
+                    />
+                    <span className="text-foreground">{priority.name}</span>
+                    {priority.isDefault && (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {t('settings.default', 'Default')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => setEditingPriority(priority)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {!priority.isDefault && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setDeleteConfirmId(priority.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Add New Priority */}
+          {isAddingPriority ? (
+            <div className="px-4 py-3 space-y-3">
+              <Input
+                value={newPriorityName}
+                onChange={(e) => setNewPriorityName(e.target.value)}
+                placeholder={t('settings.newPriorityName', 'New priority name')}
+                autoFocus
+              />
+              <div className="flex flex-wrap gap-2">
+                {PRIORITY_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setNewPriorityColor(color)}
+                    className={cn(
+                      "h-8 w-8 rounded-full border-2 transition-all",
+                      newPriorityColor === color ? "ring-2 ring-ring ring-offset-2" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={!newPriorityName.trim()}
+                  onClick={async () => {
+                    const newPriority: CustomPriority = {
+                      id: `custom_${Date.now()}`,
+                      name: newPriorityName.trim(),
+                      color: newPriorityColor,
+                      order: priorities.length,
+                      isDefault: false,
+                    };
+                    const updated = [...priorities, newPriority];
+                    await savePriorities(updated);
+                    setPriorities(updated);
+                    setNewPriorityName('');
+                    setNewPriorityColor('#3B82F6');
+                    setIsAddingPriority(false);
+                    toast.success(t('settings.priorityAdded', 'Priority added'));
+                  }}
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  {t('common.add', 'Add')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingPriority(false);
+                    setNewPriorityName('');
+                    setNewPriorityColor('#3B82F6');
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full mt-4 mx-4"
+              style={{ width: 'calc(100% - 2rem)' }}
+              onClick={() => setIsAddingPriority(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('settings.addPriority', 'Add Custom Priority')}
+            </Button>
+          )}
+        </div>
+      </ScrollArea>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('settings.deletePriority', 'Delete Priority')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.deletePriorityDesc', 'Are you sure you want to delete this priority? Tasks using this priority will be set to None.')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (deleteConfirmId) {
+                  const updated = priorities.filter(p => p.id !== deleteConfirmId);
+                  await savePriorities(updated);
+                  setPriorities(updated);
+                  setDeleteConfirmId(null);
+                  toast.success(t('settings.priorityDeleted', 'Priority deleted'));
+                }
+              }}
+            >
+              {t('common.delete', 'Delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0 flex flex-col">
@@ -445,6 +706,7 @@ export const TasksSettingsSheet = ({ isOpen, onClose }: TasksSettingsSheetProps)
         {currentPage === 'display' && renderDisplayPage()}
         {currentPage === 'reminders' && renderRemindersPage()}
         {currentPage === 'behavior' && renderBehaviorPage()}
+        {currentPage === 'priorities' && renderPrioritiesPage()}
       </SheetContent>
     </Sheet>
   );
