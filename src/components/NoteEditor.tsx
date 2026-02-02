@@ -16,7 +16,8 @@ import { NoteVersionHistorySheet } from './NoteVersionHistorySheet';
 import { NoteLinkingSheet } from './NoteLinkingSheet';
 import { NoteTableOfContents, injectHeadingIds } from './NoteTableOfContents';
 import { InputSheetPage } from './InputSheetPage';
-import { VoiceRecorder } from './VoiceRecorder';
+import { VoiceRecordingSheet } from './VoiceRecordingSheet';
+import { NoteVoicePlayer } from './NoteVoicePlayer';
 import { AudioPlayer } from './AudioPlayer';
 import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
@@ -284,6 +285,11 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       // Reset code fields
       setCodeContent('');
       setCodeLanguage('auto');
+      
+      // Auto-open voice recorder for new voice notes
+      if (defaultType === 'voice') {
+        setTimeout(() => setShowVoiceRecorder(true), 100);
+      }
     }
   }, [note, defaultType, defaultFolderId, isOpen]);
 
@@ -1116,21 +1122,16 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
               {/* Voice recordings list */}
               {voiceRecordings.length > 0 ? (
                 <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto">
-                  {voiceRecordings.map((recording, index) => (
-                    <div key={recording.id} className="relative">
-                      <AudioPlayer src={recording.audioUrl} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() => {
-                          setVoiceRecordings(prev => prev.filter(r => r.id !== recording.id));
-                          URL.revokeObjectURL(recording.audioUrl);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
+                  {voiceRecordings.map((recording) => (
+                    <NoteVoicePlayer
+                      key={recording.id}
+                      audioUrl={recording.audioUrl}
+                      duration={recording.duration}
+                      onDelete={() => {
+                        setVoiceRecordings(prev => prev.filter(r => r.id !== recording.id));
+                        URL.revokeObjectURL(recording.audioUrl);
+                      }}
+                    />
                   ))}
                   
                   {/* Add more recordings button */}
@@ -1144,33 +1145,29 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                   </Button>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <VoiceRecorder
-                    onRecordingComplete={handleVoiceRecordingComplete}
-                    autoStart={!note}
-                  />
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+                  <p className="text-muted-foreground text-center">
+                    {t('voice.noRecordings', 'No recordings yet')}
+                  </p>
+                  <Button
+                    onClick={() => setShowVoiceRecorder(true)}
+                    className="gap-2"
+                  >
+                    <Mic className="h-4 w-4" />
+                    {t('voice.startRecording', 'Start Recording')}
+                  </Button>
                 </div>
               )}
               
-              {/* Voice recorder sheet for adding more */}
-              {showVoiceRecorder && (
-                <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
-                  <div className="w-full max-w-md p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-semibold">{t('voice.newRecording', 'New Recording')}</h3>
-                      <Button variant="ghost" size="icon" onClick={() => setShowVoiceRecorder(false)}>
-                        <ArrowLeft className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <VoiceRecorder
-                      onRecordingComplete={(blob, url, duration) => {
-                        handleVoiceRecordingComplete(blob, url, duration);
-                        setShowVoiceRecorder(false);
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+              {/* Voice Recording Sheet */}
+              <VoiceRecordingSheet
+                isOpen={showVoiceRecorder}
+                onClose={() => setShowVoiceRecorder(false)}
+                onRecordingComplete={(blob, url, duration) => {
+                  handleVoiceRecordingComplete(blob, url, duration);
+                  setShowVoiceRecorder(false);
+                }}
+              />
             </div>
           ) : noteType === 'code' ? (
             <VirtualizedCodeEditor
@@ -1377,25 +1374,17 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
         multiline
       />
 
-      {/* Global Voice Recorder Modal (for non-voice note types) */}
-      {noteType !== 'voice' && showVoiceRecorder && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-full max-w-md p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">{t('voice.newRecording', 'New Recording')}</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowVoiceRecorder(false)}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </div>
-            <VoiceRecorder
-              onRecordingComplete={(blob, url, duration) => {
-                handleVoiceRecordingComplete(blob, url, duration);
-                setShowVoiceRecorder(false);
-                toast.success(t('voice.recordingAdded', 'Voice recording added'));
-              }}
-            />
-          </div>
-        </div>
+      {/* Global Voice Recording Sheet (for non-voice note types) */}
+      {noteType !== 'voice' && (
+        <VoiceRecordingSheet
+          isOpen={showVoiceRecorder}
+          onClose={() => setShowVoiceRecorder(false)}
+          onRecordingComplete={(blob, url, duration) => {
+            handleVoiceRecordingComplete(blob, url, duration);
+            setShowVoiceRecorder(false);
+            toast.success(t('voice.recordingAdded', 'Voice recording added'));
+          }}
+        />
       )}
 
     </div>
