@@ -23,7 +23,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2 } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail } from 'lucide-react';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1116,6 +1116,26 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                 }}>
                   <FileType className="h-4 w-4 mr-2" />
                   {t('editor.exportPdf')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  // Extract all emails from content using regex
+                  const plainText = content.replace(/<[^>]*>/g, ' '); // Remove HTML tags
+                  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                  const emails = plainText.match(emailRegex);
+                  
+                  if (emails && emails.length > 0) {
+                    // Get unique emails
+                    const uniqueEmails = [...new Set(emails)];
+                    // Replace content with only emails, one per line
+                    const emailContent = uniqueEmails.map(email => `<p>${email}</p>`).join('');
+                    setContent(emailContent);
+                    toast.success(t('editor.emailsExtracted', { count: uniqueEmails.length }) || `${uniqueEmails.length} emails extracted`);
+                  } else {
+                    toast.error(t('editor.noEmailsFound') || 'No emails found in content');
+                  }
+                }}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  {t('editor.extractEmails', 'Extract Emails')}
                 </DropdownMenuItem>
                 {note && (
                   <DropdownMenuItem onClick={() => setIsVersionHistoryOpen(true)}>
