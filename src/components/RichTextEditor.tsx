@@ -447,19 +447,30 @@ export const RichTextEditor = ({
     return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, [updateActiveStates]);
 
-  // Setup audio progress tracking for inline voice recordings
+  // Setup audio progress tracking and event delegation for inline voice recordings
   useEffect(() => {
+    if (!editorRef.current) return;
+
+    const formatTime = (secs: number) => {
+      const mins = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${mins}:${s.toString().padStart(2, '0')}`;
+    };
+
     const setupAudioListeners = () => {
-      if (!editorRef.current) return;
+      const audioElements = editorRef.current?.querySelectorAll('.voice-recording-inline audio');
+      if (!audioElements) return;
       
-      const audioElements = editorRef.current.querySelectorAll('.voice-recording-inline audio');
       audioElements.forEach((audio: Element) => {
         const audioEl = audio as HTMLAudioElement;
-        const container = audioEl.closest('.voice-recording-inline');
+        const container = audioEl.closest('.voice-recording-inline') as HTMLElement;
         if (!container) return;
         
-        const progressBar = container.querySelector('.voice-progress') as HTMLElement;
-        const durationSpan = container.querySelector('span') as HTMLElement;
+        const progressBar = container.querySelector('.waveform-progress') as HTMLElement;
+        const durationSpan = container.querySelector('.voice-duration') as HTMLElement;
+        const playIcon = container.querySelector('.play-icon') as HTMLElement;
+        const pauseIcon = container.querySelector('.pause-icon') as HTMLElement;
+        const duration = parseFloat(container.dataset.duration || audioEl.dataset.duration || '0');
         
         const updateProgress = () => {
           if (progressBar && audioEl.duration) {
@@ -467,35 +478,90 @@ export const RichTextEditor = ({
             progressBar.style.width = `${progress}%`;
           }
           if (durationSpan) {
-            const current = audioEl.currentTime;
-            const mins = Math.floor(current / 60);
-            const secs = Math.floor(current % 60);
-            durationSpan.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            durationSpan.textContent = formatTime(audioEl.currentTime);
           }
         };
         
         const resetPlayer = () => {
           if (progressBar) progressBar.style.width = '0%';
-          const btn = container.querySelector('button svg');
-          if (btn) btn.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
-          // Reset duration display
-          const duration = parseFloat(audioEl.dataset.duration || '0');
-          if (durationSpan) {
-            const mins = Math.floor(duration / 60);
-            const secs = Math.floor(duration % 60);
-            durationSpan.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-          }
+          if (playIcon) playIcon.style.display = 'block';
+          if (pauseIcon) pauseIcon.style.display = 'none';
+          if (durationSpan) durationSpan.textContent = formatTime(duration);
         };
         
+        const handlePlay = () => {
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = 'block';
+        };
+        
+        const handlePause = () => {
+          if (playIcon) playIcon.style.display = 'block';
+          if (pauseIcon) pauseIcon.style.display = 'none';
+        };
+        
+        // Remove old listeners and add new ones
         audioEl.removeEventListener('timeupdate', updateProgress);
         audioEl.removeEventListener('ended', resetPlayer);
+        audioEl.removeEventListener('play', handlePlay);
+        audioEl.removeEventListener('pause', handlePause);
         audioEl.addEventListener('timeupdate', updateProgress);
         audioEl.addEventListener('ended', resetPlayer);
+        audioEl.addEventListener('play', handlePlay);
+        audioEl.addEventListener('pause', handlePause);
       });
+    };
+    
+    // Event delegation for play/pause and delete buttons
+    const handleEditorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Check if clicked on play button or its children
+      const playBtn = target.closest('.voice-play-btn') as HTMLElement;
+      if (playBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = playBtn.closest('.voice-recording-inline');
+        const audio = container?.querySelector('audio') as HTMLAudioElement;
+        if (audio) {
+          if (audio.paused) {
+            // Pause all other audio first
+            document.querySelectorAll('.voice-recording-inline audio').forEach((a) => {
+              if (a !== audio) (a as HTMLAudioElement).pause();
+            });
+            audio.play().catch(console.error);
+          } else {
+            audio.pause();
+          }
+        }
+        return;
+      }
+      
+      // Check if clicked on delete button or its children
+      const deleteBtn = target.closest('.voice-delete-btn') as HTMLElement;
+      if (deleteBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = deleteBtn.closest('.voice-recording-inline');
+        const audio = container?.querySelector('audio') as HTMLAudioElement;
+        if (audio) {
+          audio.pause();
+          audio.src = '';
+        }
+        container?.remove();
+        // Trigger change
+        if (editorRef.current) {
+          const event = new Event('input', { bubbles: true });
+          editorRef.current.dispatchEvent(event);
+        }
+        return;
+      }
     };
     
     // Run on mount and when content changes
     setupAudioListeners();
+    
+    // Add event delegation
+    editorRef.current.addEventListener('click', handleEditorClick);
     
     // Use MutationObserver to detect new audio elements
     const observer = new MutationObserver(setupAudioListeners);
@@ -503,7 +569,10 @@ export const RichTextEditor = ({
       observer.observe(editorRef.current, { childList: true, subtree: true });
     }
     
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      editorRef.current?.removeEventListener('click', handleEditorClick);
+    };
   }, [content]);
 
   const toggleFavorite = useCallback((fontValue: string, e: React.MouseEvent) => {
@@ -2168,15 +2237,94 @@ export const RichTextEditor = ({
           .audio-player-container audio::-webkit-media-controls-panel {
             background: transparent;
           }
-          /* Inline voice recording styles */
+          /* Inline voice recording styles - WhatsApp style */
           .voice-recording-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            background: hsl(var(--muted) / 0.5);
+            border-radius: 18px;
+            border: 1px solid hsl(var(--border) / 0.3);
             user-select: none;
+            max-width: 320px;
           }
-          .voice-recording-inline button:hover {
-            opacity: 0.9;
+          .voice-recording-inline audio {
+            display: none;
           }
-          .voice-recording-inline button:active {
-            transform: scale(0.95);
+          .voice-recording-inline .voice-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.15s, background 0.15s;
+          }
+          .voice-recording-inline .voice-play-btn:hover {
+            background: hsl(var(--primary) / 0.9);
+          }
+          .voice-recording-inline .voice-play-btn:active {
+            transform: scale(0.92);
+          }
+          .voice-recording-inline .voice-play-btn svg {
+            margin-left: 2px;
+          }
+          .voice-recording-inline .voice-play-btn .pause-icon {
+            margin-left: 0;
+          }
+          .voice-recording-inline .voice-waveform {
+            flex: 1;
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            min-width: 120px;
+          }
+          .voice-recording-inline .waveform-background {
+            position: relative;
+            z-index: 1;
+          }
+          .voice-recording-inline .waveform-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+          }
+          .voice-recording-inline .voice-duration {
+            font-size: 13px;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+            min-width: 38px;
+            text-align: right;
+            flex-shrink: 0;
+          }
+          .voice-recording-inline .voice-delete-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            color: hsl(var(--destructive));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.15s, background 0.15s;
+          }
+          .voice-recording-inline .voice-delete-btn:hover {
+            opacity: 1;
+            background: hsl(var(--destructive) / 0.1);
           }
           /* Print styles for page breaks */
           @media print {
