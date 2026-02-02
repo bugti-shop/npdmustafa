@@ -195,6 +195,10 @@ export const NoteCard = ({ note, onEdit, onDelete, onArchive, onTogglePin, onTog
     if (isSticky && note.color) {
       return STICKY_COLORS[note.color];
     }
+    // Use custom color if set for non-sticky notes
+    if (note.customColor) {
+      return note.customColor;
+    }
     const index = note.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return RANDOM_COLORS[index % RANDOM_COLORS.length];
   };

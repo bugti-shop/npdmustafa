@@ -169,6 +169,7 @@ export interface Note {
   title: string;
   content: string;
   color?: StickyColor;
+  customColor?: string; // Custom background color for non-sticky notes (hex)
   images?: string[];
   voiceRecordings: VoiceRecording[];
   folderId?: string;

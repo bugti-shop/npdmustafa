@@ -23,7 +23,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { sanitizeForDisplay } from '@/lib/sanitize';
 
 import { ErrorBoundary } from './ErrorBoundary';
-import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Folder as FolderIcon, Plus, CalendarIcon, History, FileDown, Link2, ChevronDown, FileText, BookOpen, BarChart3, MoreVertical, Mic, Share2, Search, Image, Table, Minus, SeparatorHorizontal, MessageSquare, FileSymlink, FileType, Bell, Clock, Repeat, Trash2, Mail, Palette } from 'lucide-react';
 import { exportNoteToPdf, getPageBreakCount } from '@/utils/exportToPdf';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -146,6 +146,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
   const [showStats, setShowStats] = useState(false);
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
   const [metaDescription, setMetaDescription] = useState<string>('');
+  const [customColor, setCustomColor] = useState<string | undefined>(undefined);
   
   
   // Voice recorder state
@@ -247,6 +248,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       setTitle(note.title);
       setContent(note.content);
       setColor(note.color || 'yellow');
+      setCustomColor(note.customColor);
       setImages(note.images || []);
       setVoiceRecordings(note.voiceRecordings || []);
       setSelectedFolderId(note.folderId);
@@ -316,6 +318,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       setTitle('');
       setContent('');
       setColor('yellow');
+      setCustomColor(undefined);
       setImages([]);
       setVoiceRecordings([]);
       setSelectedFolderId(defaultFolderId);
@@ -392,6 +395,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       title,
       content: noteType === 'code' ? '' : content,
       color: noteType === 'sticky' ? color : undefined,
+      customColor: noteType !== 'sticky' && noteType !== 'voice' ? customColor : undefined,
       images: noteType === 'sticky' ? undefined : images,
       voiceRecordings,
       folderId: selectedFolderId || noteType,
@@ -427,6 +431,7 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
     title,
     content,
     color,
+    customColor,
     images,
     voiceRecordings,
     selectedFolderId,
@@ -676,6 +681,10 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
   const getEditorBackgroundColor = () => {
     if (noteType === 'sticky') {
       return STICKY_COLOR_VALUES[color];
+    }
+    // Use custom color if set for non-sticky notes
+    if (customColor && noteType !== 'voice') {
+      return customColor;
     }
     // Use CSS variable for regular/lined notes to match dark mode
     return 'hsl(var(--background))';
@@ -997,9 +1006,86 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
                 </DropdownMenuItem>
                 {noteType !== 'voice' && (
                   <DropdownMenuItem onClick={() => setShowVoiceRecorder(true)}>
-                    <Mic className="h-4 w-4 mr-2 text-red-500" />
+                    <Mic className="h-4 w-4 mr-2 text-destructive" />
                     {t('editor.addVoiceRecording', 'Add Voice Recording')}
                   </DropdownMenuItem>
+                )}
+                
+                {/* Note Background Color - for non-sticky, non-voice notes */}
+                {noteType !== 'sticky' && noteType !== 'voice' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5 text-sm font-semibold flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      {t('editor.backgroundColor', 'Background Color')}
+                    </div>
+                    <div className="px-2 py-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Reset/No color button */}
+                        <button
+                          type="button"
+                          onClick={() => setCustomColor(undefined)}
+                          className={cn(
+                            "h-7 w-7 rounded-full border-2 flex items-center justify-center transition-all",
+                            !customColor ? "ring-2 ring-primary ring-offset-2" : "hover:scale-110"
+                          )}
+                          style={{ backgroundColor: 'hsl(var(--background))' }}
+                          aria-label={t('editor.defaultColor', 'Default')}
+                        >
+                          {!customColor && <span className="text-xs">✓</span>}
+                        </button>
+                        {/* Preset colors */}
+                        {[
+                          '#FEF3C7', // Warm yellow
+                          '#DBEAFE', // Soft blue
+                          '#D1FAE5', // Mint green
+                          '#FCE7F3', // Light pink
+                          '#FED7AA', // Peach
+                          '#E9D5FF', // Lavender
+                          '#CFFAFE', // Cyan
+                          '#FEE2E2', // Rose
+                        ].map((presetColor) => (
+                          <button
+                            key={presetColor}
+                            type="button"
+                            onClick={() => setCustomColor(presetColor)}
+                            className={cn(
+                              "h-7 w-7 rounded-full border transition-all",
+                              customColor === presetColor ? "ring-2 ring-primary ring-offset-2" : "hover:scale-110"
+                            )}
+                            style={{ backgroundColor: presetColor }}
+                            aria-label={`Set color ${presetColor}`}
+                          />
+                        ))}
+                        {/* Custom color picker */}
+                        <label className="relative">
+                          <input
+                            type="color"
+                            value={customColor || '#ffffff'}
+                            onChange={(e) => setCustomColor(e.target.value)}
+                            className="absolute opacity-0 w-0 h-0"
+                          />
+                          <span 
+                            className={cn(
+                              "h-7 w-7 rounded-full border flex items-center justify-center cursor-pointer transition-all hover:scale-110",
+                              customColor && ![
+                                '#FEF3C7', '#DBEAFE', '#D1FAE5', '#FCE7F3', 
+                                '#FED7AA', '#E9D5FF', '#CFFAFE', '#FEE2E2'
+                              ].includes(customColor) ? "ring-2 ring-primary ring-offset-2" : ""
+                            )}
+                            style={{ 
+                              background: customColor && ![
+                                '#FEF3C7', '#DBEAFE', '#D1FAE5', '#FCE7F3', 
+                                '#FED7AA', '#E9D5FF', '#CFFAFE', '#FEE2E2'
+                              ].includes(customColor) ? customColor : 'linear-gradient(135deg, #f87171, #fbbf24, #34d399, #60a5fa, #a78bfa)'
+                            }}
+                          >
+                            <Plus className="h-3 w-3 text-white drop-shadow" />
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 
