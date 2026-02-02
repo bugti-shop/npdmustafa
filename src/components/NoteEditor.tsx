@@ -175,18 +175,33 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
       return `${mins}:${s.toString().padStart(2, '0')}`;
     };
     
+    // Generate dotted waveform pattern (WhatsApp style)
+    const generateWaveformDots = () => {
+      const dots = [];
+      for (let i = 0; i < 30; i++) {
+        dots.push(`<span class="waveform-dot" data-index="${i}" style="display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: hsl(var(--muted-foreground) / 0.4); margin: 0 1.5px;"></span>`);
+      }
+      return dots.join('');
+    };
+    
     const audioPlayerHtml = `
-      <div class="voice-recording-inline" data-voice-id="${newRecording.id}" contenteditable="false" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin: 8px 0; background: hsl(var(--muted) / 0.6); border-radius: 8px; border: 1px solid hsl(var(--border) / 0.4);">
-        <audio src="${audioUrl}" style="display: none;" data-duration="${duration}"></audio>
-        <button class="voice-play-btn" onclick="(function(btn){var audio=btn.parentElement.querySelector('audio');var icon=btn.querySelector('svg');if(audio.paused){audio.play();icon.innerHTML='<rect x=\\'6\\' y=\\'4\\' width=\\'4\\' height=\\'16\\'></rect><rect x=\\'14\\' y=\\'4\\' width=\\'4\\' height=\\'16\\'></rect>';}else{audio.pause();icon.innerHTML='<polygon points=\\'5 3 19 12 5 21 5 3\\'></polygon>';}})(this)" style="width: 32px; height: 32px; border-radius: 50%; background: hsl(var(--primary)); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary-foreground))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      <div class="voice-recording-inline" data-voice-id="${newRecording.id}" data-duration="${duration}" contenteditable="false">
+        <audio src="${audioUrl}" data-duration="${duration}"></audio>
+        <button class="voice-play-btn" type="button" aria-label="Play/Pause">
+          <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
         </button>
-        <div style="flex: 1; height: 6px; background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; overflow: hidden;">
-          <div class="voice-progress" style="height: 100%; width: 0%; background: hsl(var(--primary)); transition: width 0.1s;"></div>
+        <div class="voice-waveform">
+          <div class="waveform-progress" style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; overflow: hidden; display: flex; align-items: center;">
+            ${generateWaveformDots().replace(/hsl\(var\(--muted-foreground\) \/ 0\.4\)/g, 'hsl(var(--primary))')}
+          </div>
+          <div class="waveform-background" style="display: flex; align-items: center;">
+            ${generateWaveformDots()}
+          </div>
         </div>
-        <span style="font-size: 12px; color: hsl(var(--muted-foreground)); min-width: 36px; text-align: right;">${formatDuration(duration)}</span>
-        <button class="voice-delete-btn" onclick="(function(btn){var container=btn.closest('.voice-recording-inline');var audio=container.querySelector('audio');if(audio){audio.pause();audio.src=''}container.remove();})(this)" style="width: 28px; height: 28px; border-radius: 50%; background: transparent; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; opacity: 0.6;" onmouseover="this.style.opacity='1';this.style.background='hsl(var(--destructive) / 0.1)'" onmouseout="this.style.opacity='0.6';this.style.background='transparent'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--destructive))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+        <span class="voice-duration">${formatDuration(duration)}</span>
+        <button class="voice-delete-btn" type="button" aria-label="Delete">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
         </button>
       </div>
     `.trim();
