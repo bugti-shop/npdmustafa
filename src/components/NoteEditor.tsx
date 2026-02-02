@@ -1255,6 +1255,14 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
               onVoiceRecord={() => setShowVoiceRecorder(true)}
               externalEditorRef={editorRef}
               isFindReplaceOpen={isFindReplaceOpen}
+              voiceRecordings={voiceRecordings}
+              onVoiceRecordingDelete={(id) => {
+                const recording = voiceRecordings.find(r => r.id === id);
+                if (recording) {
+                  URL.revokeObjectURL(recording.audioUrl);
+                }
+                setVoiceRecordings(prev => prev.filter(r => r.id !== id));
+              }}
             />
           )}
         </ErrorBoundary>

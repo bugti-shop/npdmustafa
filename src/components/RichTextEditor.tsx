@@ -47,6 +47,9 @@ const saveFavorites = (favorites: string[]) => {
   setSetting(FAVORITES_KEY, favorites);
 };
 
+import { VoiceRecording } from '@/types/note';
+import { NoteVoicePlayer } from './NoteVoicePlayer';
+
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -78,6 +81,9 @@ interface RichTextEditorProps {
    * We must not overwrite innerHTML from `content` prop (it would remove highlights).
    */
   isFindReplaceOpen?: boolean;
+  // Voice recordings support for non-voice note types
+  voiceRecordings?: VoiceRecording[];
+  onVoiceRecordingDelete?: (id: string) => void;
 }
 
 const COLORS = [
@@ -361,6 +367,8 @@ export const RichTextEditor = ({
   onVoiceRecord,
   externalEditorRef,
   isFindReplaceOpen,
+  voiceRecordings = [],
+  onVoiceRecordingDelete,
 }: RichTextEditorProps) => {
   const { t } = useTranslation();
   const internalEditorRef = useRef<HTMLDivElement>(null);
@@ -2206,6 +2214,28 @@ export const RichTextEditor = ({
         autoCapitalize="sentences"
         suppressContentEditableWarning
       />
+
+      {/* Voice Recordings Display */}
+      {voiceRecordings.length > 0 && (
+        <div 
+          className="fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t px-3 py-2 space-y-2 max-h-40 overflow-y-auto"
+          style={{ 
+            bottom: toolbarPosition === 'bottom' 
+              ? 'calc(env(safe-area-inset-bottom) + var(--keyboard-inset, 0px) + 40px)' 
+              : 'calc(env(safe-area-inset-bottom) + var(--keyboard-inset, 0px))'
+          }}
+        >
+          {voiceRecordings.map((recording) => (
+            <NoteVoicePlayer
+              key={recording.id}
+              audioUrl={recording.audioUrl}
+              duration={recording.duration}
+              onDelete={onVoiceRecordingDelete ? () => onVoiceRecordingDelete(recording.id) : undefined}
+              className="shadow-sm"
+            />
+          ))}
+        </div>
+      )}
 
       {toolbarPosition === 'bottom' && (
         <div
