@@ -448,20 +448,32 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
     if (!pushedHistoryRef.current) return;
     pushedHistoryRef.current = false;
     isPoppingHistoryRef.current = true;
-    setTimeout(() => {
-      window.history.back();
-    }, 0);
+    window.history.back();
   }, []);
 
   const handleClose = useCallback(async () => {
+    // Mark as closing to prevent re-entry
+    if (!isOpenRef.current) return;
+    
     await commitNote({ full: true });
+    
+    // Close first, then handle navigation
     onClose();
-    closeHistoryOverlay();
-    // Navigate back to the origin screen if provided
-    if (returnToRef.current) {
-      navigate(returnToRef.current, { replace: true });
+    
+    // Clean up history state
+    if (pushedHistoryRef.current) {
+      pushedHistoryRef.current = false;
+      isPoppingHistoryRef.current = true;
+      window.history.back();
     }
-  }, [closeHistoryOverlay, commitNote, navigate, onClose]);
+    
+    // Navigate back to the origin screen if provided (after a small delay to avoid race)
+    if (returnToRef.current) {
+      setTimeout(() => {
+        navigate(returnToRef.current!, { replace: true });
+      }, 10);
+    }
+  }, [commitNote, navigate, onClose]);
 
   const handleCloseRef = useRef(handleClose);
   useEffect(() => {
@@ -473,8 +485,13 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
     if (!isOpen) return;
     if (typeof window === 'undefined') return;
 
-    pushedHistoryRef.current = true;
-    window.history.pushState({ __noteEditor: true }, '');
+    // Small delay to ensure component is fully mounted
+    const timeoutId = setTimeout(() => {
+      if (isOpenRef.current) {
+        pushedHistoryRef.current = true;
+        window.history.pushState({ __noteEditor: true }, '');
+      }
+    }, 50);
 
     const onPopState = () => {
       if (isPoppingHistoryRef.current) {
@@ -484,13 +501,15 @@ export const NoteEditor = ({ note, isOpen, onClose, onSave, defaultType = 'regul
 
       if (!isOpenRef.current) return;
 
-      // Keep user on same URL; close editor instead.
-      window.history.pushState({ __noteEditor: true }, '');
+      // Don't push another state, just close
       void handleCloseRef.current();
     };
 
     window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('popstate', onPopState);
+    };
   }, [isOpen]);
 
   // Auto-save as user types (debounced)
