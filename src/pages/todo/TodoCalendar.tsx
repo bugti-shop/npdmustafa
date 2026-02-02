@@ -21,7 +21,8 @@ import { createNextRecurringTask } from '@/utils/recurringTasks';
 import { playCompletionSound } from '@/utils/taskSounds';
 import { cleanupCompletedTasks } from '@/utils/taskCleanup';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TodoLayout } from './TodoLayout';
+import { TodoBottomNavigation } from '@/components/TodoBottomNavigation';
+import appLogo from '@/assets/app-logo.png';
 
 import { toast } from 'sonner';
 import { loadTodoItems, saveTodoItems } from '@/utils/todoItemsStorage';
@@ -508,9 +509,28 @@ const TodoCalendar = () => {
   }, [date, tasksForSelectedDate, showCompleted, items]);
 
   return (
-    <TodoLayout title={t('calendar.title')}>
-      <main className="container mx-auto px-4 py-6 pb-32">
-        <div className="max-w-md mx-auto space-y-4">
+    <div className="min-h-screen bg-background pb-20">
+      {/* Minimal Header */}
+      <header className="sticky top-0 bg-background z-10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-2">
+            <img src={appLogo} alt="Npd" className="h-7 w-7" />
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsFilterSheetOpen(true)}>
+              <Filter className="h-5 w-5" />
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </header>
+      
+      <main className="pb-32">
+        <div className="space-y-4">
           {/* Selection mode actions */}
           {isSelectionMode && (
             <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-lg">
@@ -788,7 +808,8 @@ const TodoCalendar = () => {
         />
       )}
       
-    </TodoLayout>
+      <TodoBottomNavigation />
+    </div>
   );
 };
 
