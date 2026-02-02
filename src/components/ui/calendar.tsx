@@ -21,7 +21,7 @@ function Calendar({ className, classNames, showOutsideDays = true, showWeekNumbe
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-lg font-bold tracking-tight",
+        caption_label: "text-lg font-medium tracking-tight",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "ghost" }),
@@ -31,7 +31,7 @@ function Calendar({ className, classNames, showOutsideDays = true, showWeekNumbe
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse",
         head_row: "flex",
-        head_cell: "text-muted-foreground/70 rounded-md w-10 font-medium text-xs uppercase tracking-wide",
+        head_cell: "text-muted-foreground/70 rounded-md w-10 font-normal text-xs uppercase tracking-wide",
         row: "flex w-full mt-1",
         cell: cn(
           "h-10 w-10 text-center p-0 relative",
@@ -44,18 +44,18 @@ function Calendar({ className, classNames, showOutsideDays = true, showWeekNumbe
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-10 w-10 p-0 font-semibold text-base aria-selected:opacity-100 rounded-full transition-colors"
+          "h-10 w-10 p-0 font-normal text-base aria-selected:opacity-100 rounded-full transition-colors"
         ),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full font-bold",
-        day_today: "bg-accent text-accent-foreground font-bold",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full font-medium",
+        day_today: "bg-accent text-accent-foreground font-medium",
         day_outside:
           "day-outside text-muted-foreground/40 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground/30",
         day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
-        weeknumber: "text-xs text-muted-foreground w-8 flex items-center justify-center font-medium",
+        weeknumber: "text-xs text-muted-foreground w-8 flex items-center justify-center font-normal",
         ...classNames,
       }}
       components={{
