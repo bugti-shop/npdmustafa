@@ -1824,25 +1824,34 @@ const Today = () => {
               <button onClick={() => setSelectedFolderId(null)} className={cn("flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap", !selectedFolderId ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted border-border")}>
                 <FolderIcon className="h-4 w-4" />{t('smartLists.allTasks')}
               </button>
-              {folders.map((folder) => (
-                <button 
-                  key={folder.id} 
-                  onClick={() => setSelectedFolderId(folder.id)} 
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap",
-                    selectedFolderId === folder.id 
-                      ? "text-primary-foreground" 
-                      : "bg-card hover:bg-muted border-border text-foreground"
-                  )}
-                  style={selectedFolderId === folder.id ? { 
-                    backgroundColor: folder.color, 
-                    borderColor: folder.color 
-                  } : undefined}
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  {folder.name}
-                </button>
-              ))}
+              {folders.map((folder) => {
+                const isSelected = selectedFolderId === folder.id;
+                // Create a light version of the folder color for unselected state background
+                const lightBgColor = folder.color ? `${folder.color}15` : undefined; // 15 = ~8% opacity in hex
+                return (
+                  <button 
+                    key={folder.id} 
+                    onClick={() => setSelectedFolderId(folder.id)} 
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap",
+                      isSelected 
+                        ? "text-primary-foreground" 
+                        : "hover:opacity-80"
+                    )}
+                    style={isSelected ? { 
+                      backgroundColor: folder.color, 
+                      borderColor: folder.color 
+                    } : {
+                      backgroundColor: lightBgColor,
+                      borderColor: folder.color || 'hsl(var(--border))',
+                      color: folder.color || 'hsl(var(--foreground))'
+                    }}
+                  >
+                    <FolderIcon className="h-4 w-4" />
+                    {folder.name}
+                  </button>
+                );
+              })}
             </div>
             
           </div>
