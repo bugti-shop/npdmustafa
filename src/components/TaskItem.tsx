@@ -11,6 +11,7 @@ import { getRepeatLabel } from '@/utils/recurringTasks';
 import { ResolvedTaskImage } from './ResolvedTaskImage';
 import { resolveTaskMediaUrl } from '@/utils/todoItemsStorage';
 import { TaskStatusBadge } from './TaskStatusBadge';
+import { usePriorities } from '@/hooks/usePriorities';
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,40 +44,23 @@ interface TaskItemProps {
 
 const PLAYBACK_SPEEDS = [0.5, 1, 1.5, 2];
 
-const getPriorityBorderColor = (priority?: Priority) => {
-  switch (priority) {
-    case 'high': return '#ef4444';
-    case 'medium': return '#f97316';
-    case 'low': return '#22c55e';
-    default: return '#6b7280';
-  }
-};
-
-const getPriorityBorderClass = (priority?: Priority) => {
-  switch (priority) {
-    case 'high': return 'border-red-500';
-    case 'medium': return 'border-orange-500';
-    case 'low': return 'border-green-500';
-    default: return 'border-muted-foreground/40';
-  }
-};
-
 // Subtask component with nested subtask collapse support
 interface SubtaskWithNestedProps {
   subtask: TodoItem;
   parentId: string;
   onUpdateSubtask?: (parentId: string, subtaskId: string, updates: Partial<TodoItem>) => void;
   hasNestedSubtasks: boolean;
+  getPriorityColor: (id: string) => string;
 }
 
-const SubtaskWithNested = ({ subtask, parentId, onUpdateSubtask, hasNestedSubtasks }: SubtaskWithNestedProps) => {
+const SubtaskWithNested = ({ subtask, parentId, onUpdateSubtask, hasNestedSubtasks, getPriorityColor }: SubtaskWithNestedProps) => {
   const [isNestedOpen, setIsNestedOpen] = useState(false);
   
   return (
     <Collapsible open={isNestedOpen} onOpenChange={setIsNestedOpen}>
       <div
         className="flex items-center gap-3 py-2 px-2 border-l-4 hover:bg-muted/30 transition-colors"
-        style={{ borderLeftColor: getPriorityBorderColor(subtask.priority) }}
+        style={{ borderLeftColor: getPriorityColor(subtask.priority || 'none') }}
       >
         <Checkbox
           checked={subtask.completed}
@@ -90,11 +74,12 @@ const SubtaskWithNested = ({ subtask, parentId, onUpdateSubtask, hasNestedSubtas
           }}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "h-5 w-5 transition-all",
-            subtask.completed 
-              ? "rounded-sm border-0 bg-muted-foreground/30 data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:text-white" 
-              : cn("rounded-full border-2", getPriorityBorderClass(subtask.priority))
+            "h-5 w-5 transition-all rounded-full border-2",
+            subtask.completed && "rounded-sm border-0 bg-muted-foreground/30 data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:text-white"
           )}
+          style={{ 
+            borderColor: subtask.completed ? undefined : getPriorityColor(subtask.priority || 'none') 
+          }}
         />
         <div className="flex-1 min-w-0">
           <p className={cn(
@@ -159,16 +144,17 @@ const SubtaskWithNested = ({ subtask, parentId, onUpdateSubtask, hasNestedSubtas
               <div
                 key={nested.id}
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/20 transition-colors border-l-2"
-                style={{ borderLeftColor: getPriorityBorderColor(nested.priority) }}
+                style={{ borderLeftColor: getPriorityColor(nested.priority || 'none') }}
               >
                 <Checkbox
                   checked={nested.completed}
                   className={cn(
-                    "h-4 w-4 transition-all",
-                    nested.completed 
-                      ? "rounded-sm border-0 bg-muted-foreground/30" 
-                      : cn("rounded-full border-2", getPriorityBorderClass(nested.priority))
+                    "h-4 w-4 transition-all rounded-full border-2",
+                    nested.completed && "rounded-sm border-0 bg-muted-foreground/30"
                   )}
+                  style={{
+                    borderColor: nested.completed ? undefined : getPriorityColor(nested.priority || 'none')
+                  }}
                   disabled
                 />
                 <span className={cn(
@@ -204,6 +190,7 @@ export const TaskItem = ({
   allTasks = []
 }: TaskItemProps) => {
   const { t } = useTranslation();
+  const { getPriorityColor } = usePriorities();
   const [localIsOpen, setLocalIsOpen] = useState(false);
   const isOpen = expandedTasks ? expandedTasks.has(item.id) : localIsOpen;
   const setIsOpen = (open: boolean) => {
@@ -321,7 +308,7 @@ export const TaskItem = ({
             level > 0 && "mr-2"
           )}
           style={{ 
-            borderLeftColor: getPriorityBorderColor(item.priority),
+            borderLeftColor: getPriorityColor(item.priority || 'none'),
             WebkitUserSelect: 'none',
             userSelect: 'none',
           }}
@@ -356,12 +343,13 @@ export const TaskItem = ({
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        "h-6 w-6 flex-shrink-0 transition-all",
-                        item.completed 
-                          ? "rounded-sm border-0 bg-muted-foreground/30 data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:text-white" 
-                          : cn("rounded-full border-2", getPriorityBorderClass(item.priority)),
+                        "h-6 w-6 flex-shrink-0 transition-all rounded-full border-2",
+                        item.completed && "rounded-sm border-0 bg-muted-foreground/30 data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:text-white",
                         isBlocked && "opacity-50 cursor-not-allowed"
                       )}
+                      style={{
+                        borderColor: item.completed ? undefined : getPriorityColor(item.priority || 'none')
+                      }}
                     />
                     {isBlocked && (
                       <Lock className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
@@ -537,6 +525,7 @@ export const TaskItem = ({
                     parentId={item.id}
                     onUpdateSubtask={onUpdateSubtask}
                     hasNestedSubtasks={hasNestedSubtasks}
+                    getPriorityColor={getPriorityColor}
                   />
                 );
               })}

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Priority } from '@/types/note';
 import { Flag, Circle } from 'lucide-react';
 import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
+import { usePriorities } from '@/hooks/usePriorities';
 
 interface PrioritySelectSheetProps {
   isOpen: boolean;
@@ -10,14 +11,9 @@ interface PrioritySelectSheetProps {
   onSelect: (priority: Priority) => void;
 }
 
-const PRIORITIES: { value: Priority; label: string; color: string }[] = [
-  { value: 'high', label: 'High Priority', color: 'text-red-500' },
-  { value: 'medium', label: 'Medium Priority', color: 'text-orange-500' },
-  { value: 'low', label: 'Low Priority', color: 'text-blue-500' },
-  { value: 'none', label: 'No Priority', color: 'text-muted-foreground' },
-];
-
 export const PrioritySelectSheet = ({ isOpen, onClose, onSelect }: PrioritySelectSheetProps) => {
+  const { priorities } = usePriorities();
+  
   // Hardware back button support - use 'sheet' priority to close sheet before navigation
   useHardwareBackButton({
     onBack: onClose,
@@ -41,15 +37,18 @@ export const PrioritySelectSheet = ({ isOpen, onClose, onSelect }: PrioritySelec
         </SheetHeader>
 
         <div className="space-y-2">
-          {PRIORITIES.map(({ value, label, color }) => (
+          {priorities.map((p) => (
             <Button
-              key={value}
+              key={p.id}
               variant="outline"
               className="w-full justify-start h-12"
-              onClick={() => handleSelect(value)}
+              onClick={() => handleSelect(p.id)}
             >
-              <Circle className={`h-4 w-4 mr-3 fill-current ${color}`} />
-              {label}
+              <Circle 
+                className="h-4 w-4 mr-3 fill-current" 
+                style={{ color: p.color }}
+              />
+              {p.name}
             </Button>
           ))}
         </div>
