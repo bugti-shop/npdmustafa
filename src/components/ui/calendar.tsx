@@ -44,12 +44,12 @@ function Calendar({ className, classNames, showOutsideDays = true, showWeekNumbe
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-10 w-10 p-0 font-normal text-base aria-selected:opacity-100 rounded-full transition-colors"
+          "h-10 w-10 p-0 font-normal text-base aria-selected:opacity-100 rounded-full transition-colors !font-normal"
         ),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full font-medium",
-        day_today: "bg-accent text-accent-foreground font-medium",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full !font-normal",
+        day_today: "bg-accent text-accent-foreground !font-normal",
         day_outside:
           "day-outside text-muted-foreground/40 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground/30",
