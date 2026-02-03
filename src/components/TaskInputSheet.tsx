@@ -11,6 +11,7 @@ import { useHardwareBackButton } from '@/hooks/useHardwareBackButton';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { getSetting, setSetting } from '@/utils/settingsStorage';
 import { TasksSettings } from './TasksSettingsSheet';
+import { usePriorities } from '@/hooks/usePriorities';
 
 // Ref for pending subtasks (sync access during task creation)
 let pendingSubtasksRef: { current: TodoItem[] | undefined } = { current: undefined };
@@ -79,6 +80,9 @@ export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFo
   
   // Keyboard height detection to keep sheet above keyboard
   const keyboardHeight = useKeyboardHeight();
+  
+  // Load custom priorities
+  const { priorities, getPriorityColor, getPriorityName } = usePriorities();
   
   // Hardware back button support - use 'sheet' priority to close sheet before navigation
   useHardwareBackButton({
@@ -1143,54 +1147,59 @@ export const TaskInputSheet = ({ isOpen, onClose, onAddTask, folders, selectedFo
               }
 
               if (action.id === 'priority') {
+                const currentPriorityColor = getPriorityColor(priority);
+                const currentPriorityName = getPriorityName(priority);
                 return (
                   <Popover key={action.id} open={showPriorityMenu} onOpenChange={setShowPriorityMenu}>
                     <PopoverTrigger asChild>
-                      <button className={cn(
-                        "relative flex items-center gap-1.5 px-3 py-2 rounded-md border transition-all whitespace-nowrap",
-                        priority === 'high' ? "border-red-500 bg-red-50 dark:bg-red-950/30" :
-                        priority === 'medium' ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30" :
-                        priority === 'low' ? "border-green-500 bg-green-50 dark:bg-green-950/30" :
-                        "border-border bg-card hover:bg-muted"
-                      )}>
+                      <button 
+                        className="relative flex items-center gap-1.5 px-3 py-2 rounded-md border transition-all whitespace-nowrap"
+                        style={{
+                          borderColor: priority !== 'none' ? currentPriorityColor : undefined,
+                          backgroundColor: priority !== 'none' ? `${currentPriorityColor}15` : undefined,
+                        }}
+                      >
                         {priority !== 'none' && (
-                          <span className={cn(
-                            "absolute -top-1 -right-1 w-2 h-2 rounded-full",
-                            priority === 'high' ? 'bg-red-500' :
-                            priority === 'medium' ? 'bg-orange-500' :
-                            'bg-green-500'
-                          )} />
+                          <span 
+                            className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                            style={{ backgroundColor: currentPriorityColor }}
+                          />
                         )}
-                        <Flag className={cn("h-4 w-4 flex-shrink-0", 
-                          priority === 'high' ? 'text-red-500 fill-red-500' : 
-                          priority === 'medium' ? 'text-orange-500 fill-orange-500' : 
-                          priority === 'low' ? 'text-green-500 fill-green-500' : 
-                          'text-muted-foreground'
-                        )} />
-                        <span className={cn("text-sm whitespace-nowrap",
-                          priority === 'high' ? 'text-red-600 dark:text-red-400' : 
-                          priority === 'medium' ? 'text-orange-600 dark:text-orange-400' : 
-                          priority === 'low' ? 'text-green-600 dark:text-green-400' : 
-                          'text-muted-foreground'
-                        )}>
-                          {priority !== 'none' ? t(`tasks.priority.${priority}`) : t('taskInput.priority')}
+                        <Flag 
+                          className="h-4 w-4 flex-shrink-0"
+                          style={{ 
+                            color: priority !== 'none' ? currentPriorityColor : undefined,
+                            fill: priority !== 'none' ? currentPriorityColor : 'none',
+                          }}
+                        />
+                        <span 
+                          className="text-sm whitespace-nowrap"
+                          style={{ color: priority !== 'none' ? currentPriorityColor : undefined }}
+                        >
+                          {priority !== 'none' ? currentPriorityName : t('taskInput.priority')}
                         </span>
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-48 p-2 bg-popover z-[100]" align="start">
                       <div className="space-y-1">
-                        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { setPriority('high'); setShowPriorityMenu(false); }}>
-                          <Flag className="h-4 w-4 mr-2 text-red-500 fill-red-500" />{t('tasks.priority.high')}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { setPriority('medium'); setShowPriorityMenu(false); }}>
-                          <Flag className="h-4 w-4 mr-2 text-orange-500 fill-orange-500" />{t('tasks.priority.medium')}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { setPriority('low'); setShowPriorityMenu(false); }}>
-                          <Flag className="h-4 w-4 mr-2 text-green-500 fill-green-500" />{t('tasks.priority.low')}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { setPriority('none'); setShowPriorityMenu(false); }}>
-                          <Flag className="h-4 w-4 mr-2 text-gray-400" />{t('tasks.priority.none')}
-                        </Button>
+                        {priorities.map((p) => (
+                          <Button 
+                            key={p.id}
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full justify-start" 
+                            onClick={() => { setPriority(p.id); setShowPriorityMenu(false); }}
+                          >
+                            <Flag 
+                              className="h-4 w-4 mr-2" 
+                              style={{ 
+                                color: p.color, 
+                                fill: p.id !== 'none' ? p.color : 'none' 
+                              }} 
+                            />
+                            {p.name}
+                          </Button>
+                        ))}
                       </div>
                     </PopoverContent>
                   </Popover>
